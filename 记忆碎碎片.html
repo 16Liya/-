@@ -2,187 +2,58 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>记忆碎片 - 间隔重复复习</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的记忆助手</title>
     <style>
-        :root {
-            --primary-color: #4a90e2;
-            --bg-color: #f5f7fa;
-            --card-bg: #ffffff;
-            --text-color: #333;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        h1 { font-size: 1.5rem; color: var(--primary-color); text-align: center; }
-
-        /* 输入区样式 */
-        .input-section {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px; /* 防止iOS缩放 */
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        button:active { opacity: 0.8; }
-
-        /* 列表样式 */
-        .section-title {
-            font-weight: bold;
-            margin: 20px 0 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .badge {
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-            border-left: 5px solid #eee;
-        }
-
-        .card.due { border-left-color: #ff9500; }
-        .card.done { opacity: 0.6; border-left-color: #4cd964; }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
-        .card-meta { font-size: 0.8rem; color: #888; }
-        .card-content { font-size: 0.95rem; margin-top: 8px; white-space: pre-wrap; }
-
-        .actions {
-            margin-top: 12px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 14px;
-            width: auto;
-            flex: 1;
-        }
-
-        .btn-delete { background-color: #ff3b30; }
-        .btn-done { background-color: #4cd964; }
-
-        .empty-tip { text-align: center; color: #999; margin: 30px 0; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        .card { background: #fff; padding: 15px; margin-top: 12px; border-radius: 8px; border-left: 5px solid #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🧠 记忆备忘录</h1>
-
-    <!-- 添加新记忆 -->
-    <div class="input-section">
-        <input type="text" id="title" placeholder="输入学习的主题 (如: 英语单词-Day1)">
-        <textarea id="content" rows="3" placeholder="输入具体想记住的内容..."></textarea>
-        <button onclick="addRecord()">存入记忆库</button>
+    <h2>🧠 记忆碎片</h2>
+    <div class="box">
+        <input type="text" id="t" placeholder="输入标题">
+        <textarea id="c" rows="3" placeholder="输入内容"></textarea>
+        <button onclick="saveMe()">点我存入记忆</button>
     </div>
 
-    <!-- 今日待复习 -->
-    <div class="section-title">
-        <span>📅 今日复习任务</span>
-        <span id="due-count" class="badge">0</span>
-    </div>
-    <div id="due-list"></div>
-
-    <!-- 全部记录 -->
-    <div class="section-title">
-        <span>📚 所有记忆档案</span>
-    </div>
-    <div id="all-list"></div>
-</div>
+    <h3>📚 已存记录</h3>
+    <div id="list"></div>
 
 <script>
-    // 艾宾浩斯复习间隔（天）
-    const REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30, 60, 180];
+    // 这是让按钮起作用的核心逻辑
+    function saveMe() {
+        const t = document.getElementById('t').value;
+        const c = document.getElementById('c').value;
+        
+        if (!t) { alert("请输入标题！"); return; }
 
-    // 初始化数据
-    let records = JSON.parse(localStorage.getItem('memory_records') || '[]');
+        let data = JSON.parse(localStorage.getItem('my_data') || '[]');
+        data.push({ title: t, content: c, time: new Date().toLocaleString() });
+        localStorage.setItem('my_data', JSON.stringify(data));
 
-    // 保存到本地存储
-    function save() {
-        localStorage.setItem('memory_records', JSON.stringify(records));
-        render();
+        alert("✅ 存好啦！"); // 只要弹出这个框，就说明成功了
+        document.getElementById('t').value = '';
+        document.getElementById('c').value = '';
+        show();
     }
 
-    // 添加记录
-    function addRecord() {
-        const title = document.getElementById('title').value;
-        const content = document.getElementById('content').value;
-
-        if (!title) {
-            alert("请输入标题");
-            return;
-        }
-
-        const now = new Date();
-        const newRecord = {
-            id: Date.now(),
-            title: title,
-            content: content,
-            createDate: now.toISOString(),
-            lastReviewDate: null,
-            reviewCount: 0,
-            nextReviewDate: calculateNextDate(now, 0)
-        };
-
-        records.push(newRecord);
-        document.getElementById('title').value = '';
-        document.getElementById('content').value = '';
-        save();
+    function show() {
+        let data = JSON.parse(localStorage.getItem('my_data') || '[]');
+        let html = '';
+        data.reverse().forEach(item => {
+            html += `<div class="card"><b>${item.title}</b><br><small>${item.time}</small><br>${item.content}</div>`;
+        });
+        document.getElementById('list').innerHTML = html || '<p>还没有记录哦</p>';
     }
+
+    // 页面加载时自动显示
+    window.onload = show;
+</script>
+</body>
+</html>
+
