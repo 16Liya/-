@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>记忆碎片 Pro</title>
+    <title>记忆碎片 - 考研版</title>
     <style>
-        /* CSS 变量：支持深浅色模式 */
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
+            --primary: #b91c1c; /* 北大红 */
+            --primary-hover: #991b1b;
             --bg-color: #f4f7f6;
             --card-bg: #ffffff;
             --text-main: #1f2937;
@@ -20,7 +19,7 @@
         }
 
         [data-theme="dark"] {
-            --primary: #6366f1;
+            --primary: #ef4444;
             --bg-color: #111827;
             --card-bg: #1f2937;
             --text-main: #f9fafb;
@@ -32,16 +31,18 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
         body { background: var(--bg-color); color: var(--text-main); overflow-x: hidden; transition: background 0.3s; }
 
-        /* 顶部导航 */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 20px; background: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             position: sticky; top: 0; z-index: 10;
         }
         .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); }
-        .logo { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+        .logo { font-size: 1.2rem; font-weight: bold; color: var(--primary); display: flex; flex-direction: column; align-items: center;}
+        
+        /* 考研倒计时样式 */
+        .countdown { font-size: 0.7rem; color: var(--text-sub); font-weight: normal; margin-top: 2px;}
+        .countdown strong { color: var(--primary); font-size: 0.85rem;}
 
-        /* 侧边栏 */
         #sidebar {
             position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
             background: var(--sidebar-bg); box-shadow: 2px 0 10px rgba(0,0,0,0.1);
@@ -56,18 +57,13 @@
             color: var(--text-main); text-decoration: none; border-bottom: 1px solid var(--border-color); cursor: pointer;
         }
         .menu-item:hover { background: var(--border-color); }
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 99; display: none;
-        }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99; display: none; }
         #overlay.show { display: block; }
 
-        /* 页面视图切换 */
         .view { display: none; padding: 20px; max-width: 600px; margin: 0 auto; animation: fadeIn 0.3s; }
         .view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 表单与输入 */
         .form-group { margin-bottom: 15px; }
         input, textarea, select {
             width: 100%; padding: 12px; border: 1px solid var(--border-color);
@@ -79,9 +75,7 @@
             border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
         .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
 
-        /* 卡片列表 */
         .card {
             background: var(--card-bg); padding: 16px; border-radius: 12px; margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--primary); position: relative;
@@ -91,16 +85,14 @@
         .card-tag { background: var(--bg-color); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
         .card-content { white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }
         
-        /* 交互按钮 */
         .card-actions { display: flex; gap: 8px; margin-top: 15px; }
         .action-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
         .btn-edit { background: var(--bg-color); color: var(--text-main); }
         .btn-del { background: #fee2e2; color: var(--danger); }
 
-        /* 复习模式 - 卡片滑动UI */
         .flashcard {
-            background: var(--card-bg); height: 300px; border-radius: 16px; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center; padding: 20px;
+            background: var(--card-bg); height: 350px; border-radius: 16px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; padding: 25px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; transition: transform 0.3s, opacity 0.3s;
         }
         .flashcard.swipe-left { transform: translateX(-100%) rotate(-10deg); opacity: 0; }
@@ -110,7 +102,6 @@
         .btn-forgot { background: var(--danger); }
         .btn-remember { background: var(--success); }
 
-        /* 日历样式 */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day { padding: 10px 0; font-size: 0.9rem; border-radius: 8px; background: var(--card-bg); position: relative;}
@@ -118,14 +109,11 @@
         .cal-day.selected { background: var(--primary); color: white; }
         .cal-day.empty { background: transparent; }
 
-        /* 弹窗/Toast */
         #toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text-main);
             color: var(--bg-color); padding: 12px 24px; border-radius: 30px; z-index: 1000;
             display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
         }
-
-        /* 隐藏的文件输入框 */
         #import-file { display: none; }
     </style>
 </head>
@@ -133,67 +121,62 @@
 
 <div id="toast">提示信息</div>
 
-<!-- 顶部导航 -->
 <header>
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-    <div class="logo">🧠 记忆碎片 Pro</div>
-    <div style="width: 24px;"></div> <!-- 占位保持居中 -->
+    <div class="logo">
+        <span>🎓 文学考研冲刺</span>
+        <span class="countdown">距初试还剩 <strong id="exam-countdown">--</strong> 天</span>
+    </div>
+    <div style="width: 24px;"></div>
 </header>
 
-<!-- 侧边栏及遮罩 -->
 <div id="overlay" onclick="toggleSidebar()"></div>
 <div id="sidebar">
     <div class="sidebar-header">
-        <h2>菜单</h2>
+        <h2>导航菜单</h2>
         <button class="close-btn" onclick="toggleSidebar()">✖</button>
     </div>
     <div class="sidebar-menu">
-        <div class="menu-item" onclick="switchView('add')">➕ 记录新记忆</div>
-        <div class="menu-item" onclick="switchView('review')">🎯 今日复习任务 <span id="nav-badge" style="background:var(--danger);color:white;padding:2px 8px;border-radius:10px;font-size:0.8rem;margin-left:auto;">0</span></div>
-        <div class="menu-item" onclick="switchView('list')">📚 所有记忆档案</div>
-        <div class="menu-item" onclick="switchView('calendar')">📅 时光日历</div>
-        <div class="menu-item" onclick="toggleTheme()">🌓 切换深/浅色</div>
-        <div class="menu-item" onclick="exportData()">💾 导出数据 (备份)</div>
-        <div class="menu-item" onclick="document.getElementById('import-file').click()">📂 导入数据 (恢复)</div>
+        <div class="menu-item" onclick="switchView('add')">➕ 录入新知识点</div>
+        <div class="menu-item" onclick="switchView('review')">🎯 每日背诵打卡 <span id="nav-badge" style="background:var(--danger);color:white;padding:2px 8px;border-radius:10px;font-size:0.8rem;margin-left:auto;">0</span></div>
+        <div class="menu-item" onclick="switchView('list')">📚 我的文学题库</div>
+        <div class="menu-item" onclick="switchView('calendar')">📅 备考足迹</div>
+        <div class="menu-item" onclick="toggleTheme()">🌓 夜间背诵模式</div>
+        <div class="menu-item" onclick="exportData()">💾 备份题库 (极重要)</div>
+        <div class="menu-item" onclick="document.getElementById('import-file').click()">📂 恢复题库</div>
         <input type="file" id="import-file" accept=".json" onchange="importData(event)">
     </div>
 </div>
 
-<!-- 视图 1：添加/编辑记忆 -->
 <main id="view-add" class="view active">
-    <h2 style="margin-bottom: 20px;" id="form-title">记录新知识</h2>
+    <h2 style="margin-bottom: 20px;" id="form-title">录入新知识点</h2>
     <input type="hidden" id="edit-id">
     <div class="form-group">
-        <input type="text" id="t" placeholder="输入标题 (如：背诵古诗)">
+        <input type="text" id="t" placeholder="题目 (如: 简述《狂人日记》的思想意蕴)">
     </div>
     <div class="form-group">
-        <input type="text" id="tag" placeholder="分类标签 (如：英语, 编程 - 可选)">
+        <input type="text" id="tag" placeholder="科目 (如: 现代文学, 文学理论)">
     </div>
     <div class="form-group">
-        <textarea id="c" rows="5" placeholder="输入详细内容..."></textarea>
+        <textarea id="c" rows="6" placeholder="答题要点 (尽量精简，分条列出1,2,3...)"></textarea>
     </div>
-    <button class="btn" onclick="saveRecord()">存入记忆库</button>
+    <button class="btn" onclick="saveRecord()">存入题库</button>
     <button class="btn btn-outline" style="margin-top: 10px; display: none;" id="cancel-edit-btn" onclick="cancelEdit()">取消修改</button>
 </main>
 
-<!-- 视图 2：今日复习 (滑动卡片) -->
 <main id="view-review" class="view">
-    <h2 style="margin-bottom: 20px;">今日任务</h2>
-    <div id="review-container">
-        <!-- 动态渲染单张复习卡片 -->
-    </div>
+    <h2 style="margin-bottom: 20px;">背诵打卡</h2>
+    <div id="review-container"></div>
 </main>
 
-<!-- 视图 3：所有记录列表 -->
 <main id="view-list" class="view">
-    <h2 style="margin-bottom: 20px;">我的档案</h2>
+    <h2 style="margin-bottom: 20px;">我的题库</h2>
     <div class="form-group">
-        <input type="text" id="search" placeholder="搜索标题或标签..." oninput="renderList()">
+        <input type="text" id="search" placeholder="搜索题目或科目..." oninput="renderList()">
     </div>
     <div id="list-container"></div>
 </main>
 
-<!-- 视图 4：时光日历 -->
 <main id="view-calendar" class="view">
     <div class="calendar-header">
         <button class="menu-btn" onclick="changeMonth(-1)">◀</button>
@@ -204,27 +187,41 @@
         <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
     </div>
     <div class="calendar-grid" id="cal-grid"></div>
-    <h3 style="margin-top: 20px; font-size: 1rem;" id="cal-selected-date">请选择日期</h3>
+    <h3 style="margin-top: 20px; font-size: 1rem;" id="cal-selected-date">请选择日期查看当天录入的题</h3>
     <div id="cal-list-container" style="margin-top: 15px;"></div>
 </main>
 
 <script>
-    // --- 核心数据与状态 ---
-    const INTERVALS = [1, 2, 4, 7, 15, 30, 60, 90, 180];
+    /* =========================================================
+       核心区域：这里是你专属的“文学考研遗忘曲线”配置！
+       你可以随时自己修改括号里的天数。
+       设定逻辑：前一周死磕，中期巩固，后期防遗忘（最高不超过60天）
+    ========================================================= */
+    const INTERVALS = [1, 2, 3, 5, 8, 14, 21, 30, 45, 60]; 
+
+    // 计算考研倒计时 (设定为2026年12月19日，通常考研在12面倒数第二周周末)
+    const examDate = new Date('2026-12-19T00:00:00');
+    
     let memories = JSON.parse(localStorage.getItem('pro_memories') || '[]');
     let currentTheme = localStorage.getItem('pro_theme') || 'light';
-    let currentReviewQueue = []; // 当前待复习队列
-    let currentCalDate = new Date(); // 日历当前显示的月份
+    let currentReviewQueue = [];
+    let currentCalDate = new Date();
 
-    // --- 初始化 ---
     window.onload = () => {
         applyTheme(currentTheme);
         checkReviewQueue();
+        updateCountdown();
         if (currentReviewQueue.length > 0) switchView('review');
         else switchView('add');
     };
 
-    // --- UI 交互基础 ---
+    function updateCountdown() {
+        const now = new Date();
+        const diffTime = Math.abs(examDate - now);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        document.getElementById('exam-countdown').innerText = diffDays;
+    }
+
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg;
@@ -242,8 +239,6 @@
         document.getElementById(`view-${viewId}`).classList.add('active');
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('show');
-
-        // 切换视图时触发相应渲染
         if(viewId === 'list') renderList();
         if(viewId === 'review') renderReviewCard();
         if(viewId === 'calendar') renderCalendar();
@@ -253,34 +248,29 @@
         currentTheme = currentTheme === 'light' ? 'dark' : 'light';
         localStorage.setItem('pro_theme', currentTheme);
         applyTheme(currentTheme);
-        showToast(currentTheme === 'dark' ? "已开启深色模式 🌙" : "已开启浅色模式 ☀️");
     }
 
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-    }
+    function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
 
-    // --- 核心业务逻辑 (艾宾浩斯) ---
     function saveRecord() {
         const id = document.getElementById('edit-id').value;
         const title = document.getElementById('t').value.trim();
         const tag = document.getElementById('tag').value.trim();
         const content = document.getElementById('c').value.trim();
 
-        if (!title) return showToast("❌ 标题不能为空！");
+        if (!title) return showToast("❌ 题目不能为空！");
 
         if (id) {
-            // 修改已有
             const idx = memories.findIndex(m => m.id == id);
             if (idx > -1) {
                 memories[idx].title = title;
                 memories[idx].tags = tag;
+                memories[idx].tag = tag; // 兼容旧数据
                 memories[idx].content = content;
                 showToast("✅ 修改成功！");
             }
             cancelEdit();
         } else {
-            // 新增
             const now = new Date();
             memories.push({
                 id: Date.now(),
@@ -289,46 +279,43 @@
                 reviewCount: 0,
                 nextReviewAt: calcNextDate(now, 0)
             });
-            showToast("✨ 存入记忆库成功！");
+            showToast("✨ 已收入题库，明天记得背！");
             document.getElementById('t').value = '';
-            document.getElementById('tag').value = '';
             document.getElementById('c').value = '';
         }
-        
         saveData();
         checkReviewQueue();
     }
 
     function calcNextDate(baseDate, count) {
         let d = new Date(baseDate);
-        let days = INTERVALS[count] || 365;
+        // 如果复习次数超过了数组长度，就固定60天推一次
+        let days = INTERVALS[count] || 60; 
         d.setDate(d.getDate() + days);
         d.setHours(0,0,0,0);
         return d.getTime();
     }
 
-    function saveData() {
-        localStorage.setItem('pro_memories', JSON.stringify(memories));
-    }
+    function saveData() { localStorage.setItem('pro_memories', JSON.stringify(memories)); }
 
-    // --- 列表渲染与编辑删除 ---
     function renderList() {
         const kw = document.getElementById('search').value.toLowerCase();
         const container = document.getElementById('list-container');
         container.innerHTML = '';
 
         let filtered = memories.filter(m => 
-            m.title.toLowerCase().includes(kw) || (m.tag && m.tag.toLowerCase().includes(kw))
+            m.title.toLowerCase().includes(kw) || ((m.tags||m.tag) && (m.tags||m.tag).toLowerCase().includes(kw))
         );
 
         filtered.sort((a,b) => b.id - a.id).forEach(m => {
             const nextD = new Date(m.nextReviewAt).toLocaleDateString();
-            const tagHtml = m.tag ? `<span class="card-tag">🏷️ ${m.tag}</span>` : '';
+            const actualTag = m.tags || m.tag || '';
+            const tagHtml = actualTag ? `<span class="card-tag">🏷️ ${actualTag}</span>` : '';
             container.innerHTML += `
                 <div class="card">
                     <div class="card-title">${m.title}</div>
                     <div class="card-meta">
-                        <span>已复习 ${m.reviewCount}次 | 下次: ${nextD}</span>
+                        <span>已背 ${m.reviewCount}次 | 下次: ${nextD}</span>
                         ${tagHtml}
                     </div>
                     <div class="card-content">${m.content}</div>
@@ -339,16 +326,15 @@
                 </div>
             `;
         });
-        if(filtered.length === 0) container.innerHTML = '<p style="text-align:center;color:var(--text-sub)">没有找到记录</p>';
+        if(filtered.length === 0) container.innerHTML = '<p style="text-align:center;color:var(--text-sub)">未搜到相关题目</p>';
     }
 
     function deleteRecord(id) {
-        if(confirm("确定永久删除这条记录吗？")) {
+        if(confirm("确定彻底删除这道题吗？")) {
             memories = memories.filter(m => m.id !== id);
             saveData();
             checkReviewQueue();
             renderList();
-            showToast("已删除");
         }
     }
 
@@ -359,7 +345,7 @@
         document.getElementById('t').value = m.title;
         document.getElementById('tag').value = m.tags || m.tag || '';
         document.getElementById('c').value = m.content;
-        document.getElementById('form-title').innerText = "✏️ 编辑记忆";
+        document.getElementById('form-title').innerText = "✏️ 编辑题目";
         document.getElementById('cancel-edit-btn').style.display = 'block';
         switchView('add');
     }
@@ -369,12 +355,11 @@
         document.getElementById('t').value = '';
         document.getElementById('tag').value = '';
         document.getElementById('c').value = '';
-        document.getElementById('form-title').innerText = "记录新知识";
+        document.getElementById('form-title').innerText = "录入新知识点";
         document.getElementById('cancel-edit-btn').style.display = 'none';
         switchView('list');
     }
 
-    // --- 今日复习与滑动交互 ---
     function checkReviewQueue() {
         const today = new Date().setHours(0,0,0,0);
         currentReviewQueue = memories.filter(m => m.nextReviewAt <= today);
@@ -388,23 +373,27 @@
         if (currentReviewQueue.length === 0) {
             container.innerHTML = `
                 <div class="flashcard" style="border: 2px dashed var(--border-color); box-shadow:none;">
-                    <div style="font-size: 3rem; margin-bottom:10px;">🎉</div>
-                    <h3>太棒了！</h3>
-                    <p style="color:var(--text-sub)">今天的复习任务已全部清空</p>
+                    <div style="font-size: 3rem; margin-bottom:10px;">☕</div>
+                    <h3>今日背诵任务已清空！</h3>
+                    <p style="color:var(--text-sub)">劳逸结合，考研人休息一下吧</p>
                 </div>
             `;
             return;
         }
 
-        const m = currentReviewQueue[0]; // 取第一张
+        const m = currentReviewQueue[0];
+        const actualTag = m.tags || m.tag || '';
+        const tagHtml = actualTag ? `<span class="card-tag" style="margin-bottom:10px; display:inline-block;">${actualTag}</span>` : '';
+        
         container.innerHTML = `
             <div class="flashcard" id="current-card">
-                <h3 style="font-size: 1.5rem; margin-bottom:15px; color:var(--primary)">${m.title}</h3>
-                <div style="overflow-y:auto; flex:1; width:100%; text-align:left; color:var(--text-main); font-size:1.1rem; line-height:1.6;">${m.content || '(无详情)'}</div>
+                ${tagHtml}
+                <h3 style="font-size: 1.3rem; margin-bottom:15px; color:var(--primary)">${m.title}</h3>
+                <div style="overflow-y:auto; flex:1; width:100%; text-align:left; color:var(--text-main); font-size:1.05rem; line-height:1.6; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 8px;">${m.content || '(无答案解析)'}</div>
             </div>
             <div class="review-btns">
-                <button class="review-btn btn-forgot" onclick="handleSwipe('left', ${m.id})">❌ 忘记了<br><span style="font-size:0.8rem;font-weight:normal">重新学习</span></button>
-                <button class="review-btn btn-remember" onclick="handleSwipe('right', ${m.id})">✅ 记住了<br><span style="font-size:0.8rem;font-weight:normal">下周期见</span></button>
+                <button class="review-btn btn-forgot" onclick="handleSwipe('left', ${m.id})">❌ 忘了，太难了<br><span style="font-size:0.8rem;font-weight:normal">明天重新背</span></button>
+                <button class="review-btn btn-remember" onclick="handleSwipe('right', ${m.id})">✅ 倒背如流<br><span style="font-size:0.8rem;font-weight:normal">进入下一轮</span></button>
             </div>
         `;
     }
@@ -413,27 +402,24 @@
         const cardEl = document.getElementById('current-card');
         cardEl.classList.add(direction === 'left' ? 'swipe-left' : 'swipe-right');
         
-        // 动画结束后处理数据
         setTimeout(() => {
             const idx = memories.findIndex(m => m.id === id);
             if (idx > -1) {
                 if (direction === 'left') {
-                    // 忘记了：重置为第0次
+                    // 考研容错机制：如果真的忘了，打回原形（第0次）
                     memories[idx].reviewCount = 0;
-                    showToast("已重置周期，加油！");
+                    showToast("没关系，多过几遍就会了！");
                 } else {
-                    // 记住了：进入下一周期
                     memories[idx].reviewCount += 1;
-                    showToast("记忆巩固成功！");
+                    showToast("太棒了，这道题稳拿分！");
                 }
                 memories[idx].nextReviewAt = calcNextDate(new Date(), memories[idx].reviewCount);
                 saveData();
-                renderReviewCard(); // 渲染下一张
+                renderReviewCard(); 
             }
         }, 300);
     }
 
-    // --- 时光日历 ---
     function changeMonth(delta) {
         currentCalDate.setMonth(currentCalDate.getMonth() + delta);
         renderCalendar();
@@ -443,109 +429,70 @@
         const y = currentCalDate.getFullYear();
         const m = currentCalDate.getMonth();
         document.getElementById('cal-month-title').innerText = `${y}年 ${m+1}月`;
-        
-        const firstDay = new Date(y, m, 1).getDay(); // 当月第一天是星期几
-        const daysInMonth = new Date(y, m + 1, 0).getDate(); // 当月有多少天
-
-        // 提取所有有记录的日期字符串 (YYYY-MM-DD)
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
         const recordDates = new Set(memories.map(item => new Date(item.createdAt).toISOString().split('T')[0]));
-
         const grid = document.getElementById('cal-grid');
         grid.innerHTML = '';
-
-        // 填充空白
-        for(let i=0; i<firstDay; i++) {
-            grid.innerHTML += `<div class="cal-day empty"></div>`;
-        }
-
-        // 填充日期
+        for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
         const todayStr = new Date().toISOString().split('T')[0];
         for(let d=1; d<=daysInMonth; d++) {
-            const dateObj = new Date(y, m, d);
-            const dateStr = dateObj.toISOString().split('T')[0];
+            const dateStr = new Date(y, m, d).toISOString().split('T')[0];
             const hasRecord = recordDates.has(dateStr);
-            const isToday = dateStr === todayStr;
-            
-            let classStr = `cal-day ${hasRecord ? 'has-record' : ''} ${isToday ? 'selected' : ''}`;
-            
+            let classStr = `cal-day ${hasRecord ? 'has-record' : ''} ${dateStr === todayStr ? 'selected' : ''}`;
             grid.innerHTML += `<div class="${classStr}" onclick="showRecordsForDate('${dateStr}')">${d}</div>`;
         }
-        
         document.getElementById('cal-list-container').innerHTML = '';
-        document.getElementById('cal-selected-date').innerText = "点击带圆点的日期查看记录";
+        document.getElementById('cal-selected-date').innerText = "点击带圆点的日期查看录入历史";
     }
 
     function showRecordsForDate(dateStr) {
-        document.getElementById('cal-selected-date').innerText = `📅 ${dateStr} 的记录：`;
+        document.getElementById('cal-selected-date').innerText = `📅 ${dateStr} 录入的题：`;
         const container = document.getElementById('cal-list-container');
         container.innerHTML = '';
-        
         const target = memories.filter(m => new Date(m.createdAt).toISOString().split('T')[0] === dateStr);
-        
-        if(target.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">这一天没有记录哦</p>';
-            return;
-        }
-
+        if(target.length === 0) return container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">这一天你在休息~</p>';
         target.forEach(m => {
-            container.innerHTML += `
-                <div class="card" style="border-left-color:#10b981">
-                    <div class="card-title">${m.title}</div>
-                    <div class="card-content">${m.content}</div>
-                </div>
-            `;
+            container.innerHTML += `<div class="card" style="border-left-color:var(--primary)"><div class="card-title">${m.title}</div><div class="card-content">${m.content}</div></div>`;
         });
     }
 
-    // --- 数据导入与导出 ---
     function exportData() {
         const dataStr = JSON.stringify(memories, null, 2);
         const blob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `记忆碎片备份_${new Date().toLocaleDateString()}.json`;
+        a.download = `考研题库备份_${new Date().toLocaleDateString()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         toggleSidebar();
-        showToast("✅ 已下载备份文件！");
+        showToast("✅ 已下载题库备份！");
     }
 
     function importData(event) {
         const file = event.target.files[0];
         if (!file) return;
-        
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
-                    if(confirm(`检测到 ${imported.length} 条数据，是否覆盖当前记忆库？\n(取消则将导入数据与现有数据合并)`)) {
+                    if(confirm(`检测到 ${imported.length} 题，是否覆盖当前题库？\n(点取消将执行合并，不删除原有题)`)) {
                         memories = imported;
                     } else {
-                        // 合并并去重
                         const existingIds = new Set(memories.map(m => m.id));
-                        imported.forEach(item => {
-                            if(!existingIds.has(item.id)) memories.push(item);
-                        });
+                        imported.forEach(item => { if(!existingIds.has(item.id)) memories.push(item); });
                     }
-                    saveData();
-                    checkReviewQueue();
-                    showToast("🎉 数据恢复成功！");
-                    switchView('list');
-                } else {
-                    showToast("❌ 数据格式不正确");
-                }
-            } catch (err) {
-                showToast("❌ 读取文件失败，可能不是标准的JSON文件");
-            }
+                    saveData(); checkReviewQueue(); showToast("🎉 题库恢复成功！"); switchView('list');
+                } else showToast("❌ 数据格式不正确");
+            } catch (err) { showToast("❌ 读取失败，文件损坏"); }
         };
         reader.readAsText(file);
         toggleSidebar();
     }
-
 </script>
 </body>
 </html>
