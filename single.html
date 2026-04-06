@@ -3,234 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>燕园伴读-书架版</title>
+    <title>文学史伴读 - 第一章</title>
     <style>
-        :root { --pku-red: #8b0012; --bg: #f5f5f7; }
+        :root {
+            --pku-red: #8b0012;
+            --pixel-bg: #fdf6e3;
+            --pixel-border: #5d4037;
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; background: var(--bg); display: flex; flex-direction: column; 
-            height: 100vh; height: -webkit-fill-available; overflow: hidden;
+            margin: 0; 
+            background-color: var(--pixel-bg); 
+            font-family: "Courier New", Courier, monospace; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            overflow: hidden;
+            color: var(--pixel-border);
         }
 
-        /* 顶部栏 */
-        header { 
-            background: var(--pku-red); color: white; 
-            padding: calc(env(safe-area-inset-top) + 12px) 15px 12px; 
-            text-align: center; font-weight: bold; flex-shrink: 0;
-            display: flex; justify-content: space-between; align-items: center;
+        /* 像素头图区 */
+        .hero {
+            background: #e6dec5;
+            border-bottom: 4px solid var(--pixel-border);
+            padding: 20px 10px;
+            text-align: center;
+            position: relative;
         }
-        .back-btn { font-size: 14px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 4px; visibility: hidden; }
-        .back-btn.show { visibility: visible; }
 
-        /* 主体内容 */
-        #main { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; }
-
-        /* 书架卡片 */
-        .shelf-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .book-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 12px; border-bottom: 1px solid #eee; 
+        /* 简单的像素小人 SVG */
+        .avatar {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            image-rendering: pixelated;
         }
-        .book-item:last-child { border-bottom: none; }
-        .book-info { flex: 1; margin-right: 10px; }
-        .book-name { font-weight: bold; font-size: 15px; color: #333; }
-        .book-meta { font-size: 12px; color: #999; margin-top: 4px; }
-        .del-btn { color: #ff4d4f; font-size: 14px; padding: 5px; cursor: pointer; }
 
-        /* 结果卡片 */
-        .msg-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 5px solid var(--pku-red); line-height: 1.6; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
-        mark { background: #ffeb3b; color: black; padding: 0 2px; border-radius: 2px; }
-
-        /* 初始化引导 */
-        .init-box { text-align: center; padding: 30px 10px; }
-        .upload-btn { 
-            background: var(--pku-red); color: white; border: none; 
-            padding: 15px; border-radius: 10px; width: 100%; 
-            font-size: 16px; font-weight: bold; margin-bottom: 15px;
+        .bubble {
+            background: white;
+            border: 2px solid var(--pixel-border);
+            border-radius: 10px;
+            padding: 5px 10px;
+            display: inline-block;
+            font-size: 12px;
+            position: relative;
+            margin-bottom: 5px;
         }
-        textarea { width: 100%; height: 100px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; margin-top: 10px; }
 
-        /* 底部搜索栏 */
-        .footer { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: white; border-top: 1px solid #eee;
-            padding: 10px 15px calc(env(safe-area-inset-bottom) + 10px);
-            display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
+        /* 列表容器 */
+        #display-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 120px;
         }
-        .footer.hidden { transform: translateY(100%); }
+
+        /* 知识卡片 - 像素风格 */
+        .card {
+            background: white;
+            border: 3px solid var(--pixel-border);
+            padding: 15px;
+            position: relative;
+            box-shadow: 4px 4px 0px var(--pixel-border);
+            line-height: 1.6;
+        }
         
-        input[type="text"] { flex: 1; height: 44px; border: 1px solid #ddd; border-radius: 22px; padding: 0 15px; font-size: 16px; outline: none; background: #f9f9f9; }
-        .search-btn { background: var(--pku-red); color: white; border: none; width: 70px; border-radius: 22px; font-weight: bold; }
+        .card::before {
+            content: "◆";
+            position: absolute;
+            left: -10px;
+            top: 10px;
+            background: var(--pixel-bg);
+            padding: 0 2px;
+        }
 
-        .empty-tip { text-align: center; color: #999; margin-top: 50px; font-size: 14px; }
+        .card-tag {
+            font-size: 11px;
+            background: var(--pku-red);
+            color: white;
+            padding: 2px 6px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        /* 搜索栏 - 悬浮在底部 */
+        .search-container {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #e6dec5;
+            border-top: 4px solid var(--pixel-border);
+            padding: 15px 15px calc(env(safe-area-inset-bottom) + 15px);
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            border: 3px solid var(--pixel-border);
+            padding: 10px;
+            font-size: 16px;
+            outline: none;
+            background: white;
+        }
+
+        button {
+            background: var(--pku-red);
+            color: white;
+            border: 3px solid var(--pixel-border);
+            padding: 0 15px;
+            font-weight: bold;
+            box-shadow: 2px 2px 0px #333;
+        }
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #333;
+        }
+
+        mark { background: #ffeb3b; color: black; }
+
+        .hint-btns {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            margin-top: 10px;
+            padding-bottom: 5px;
+        }
+        .hint-tag {
+            font-size: 10px;
+            background: #d3c6a3;
+            padding: 3px 8px;
+            border: 1px solid var(--pixel-border);
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <div id="btn-back" class="back-btn" onclick="showShelf()">书架</div>
-    <div style="font-size: 17px;">燕园伴读</div>
-    <div style="width: 40px;"></div>
-</header>
-
-<div id="main">
-    <!-- 这里动态切换 书架界面 和 搜索结果界面 -->
-    <div id="shelf-view">
-        <div class="shelf-card">
-            <h3 style="margin-top:0; font-size:16px;">📚 我的书架</h3>
-            <div id="book-list">
-                <!-- 书籍列表 -->
-                <div class="empty-tip">书架空空如也，请加载资料</div>
-            </div>
-        </div>
-
-        <div class="init-box">
-            <input type="file" id="file-input" accept=".txt" style="display:none">
-            <button class="upload-btn" onclick="document.getElementById('file-input').click()">➕ 上传新书籍 (TXT)</button>
-            <p style="font-size:12px; color:#999;">或者手动粘贴文本内容：</p>
-            <textarea id="paste-input" placeholder="在此粘贴文字..."></textarea>
-            <button class="upload-btn" style="background:#555; margin-top:10px;" onclick="addFromPaste()">💾 确认粘贴并存入书架</button>
-            <button onclick="clearAll()" style="background:none; border:none; color:#999; font-size:12px; margin-top:20px; text-decoration:underline;">清空所有书籍</button>
-        </div>
+<div class="hero">
+    <div class="avatar">
+        <!-- 一个简单的像素小人图标 -->
+        <svg viewBox="0 0 8 8" fill="currentColor">
+            <path d="M3 0h2v1H3zM2 1h4v1H2zM1 2h6v3H1zM2 5h4v1H2zM3 6h2v2H3z" />
+        </svg>
     </div>
-
-    <div id="search-view" class="hide" style="display:none;">
-        <!-- 检索结果显示在这里 -->
+    <div class="bubble" id="npc-talk">你好！我是第一章的助教。想找什么？</div>
+    <div class="hint-btns">
+        <div class="hint-tag" onclick="quickSearch('文学革命')">#文学革命</div>
+        <div class="hint-tag" onclick="quickSearch('鲁迅')">#鲁迅</div>
+        <div class="hint-tag" onclick="quickSearch('浪漫主义')">#浪漫主义</div>
+        <div class="hint-tag" onclick="quickSearch('女神')">#郭沫若</div>
     </div>
 </div>
 
-<div class="footer hidden" id="search-footer">
-    <input type="text" id="query-input" placeholder="输入关键词检索内容...">
-    <button class="search-btn" onclick="executeSearch()">检索</button>
+<div id="display-area">
+    <div class="card">
+        <div class="card-tag">说明</div>
+        内容已根据《现代文学史》第一章内置。请在下方输入关键词检索。
+    </div>
+</div>
+
+<div class="search-container">
+    <input type="text" id="search-input" placeholder="输入关键词...">
+    <button onclick="handleSearch()">搜索</button>
 </div>
 
 <script>
-    // 存储所有书籍的结构: [{ name: '', segments: [] }]
-    let myShelf = [];
-
-    // --- 书架管理 ---
-    function updateShelfUI() {
-        const list = document.getElementById('book-list');
-        const footer = document.getElementById('search-footer');
-        
-        if (myShelf.length === 0) {
-            list.innerHTML = '<div class="empty-tip">书架空空如也，请加载资料</div>';
-            footer.classList.add('hidden');
-        } else {
-            list.innerHTML = myShelf.map((book, index) => `
-                <div class="book-item">
-                    <div class="book-info">
-                        <div class="book-name">${book.name}</div>
-                        <div class="book-meta">共 ${book.segments.length} 个知识片段</div>
-                    </div>
-                    <div class="del-btn" onclick="removeBook(${index})">删除</div>
-                </div>
-            `).join('');
-            footer.classList.remove('hidden');
+    // --- 内置的第一章知识库 (根据你提供的Word内容精炼) ---
+    const CHAPTER_DATA = [
+        {
+            tag: "核心定义",
+            content: "1917年初发生的文学革命，在中国文学史上树起一个鲜明的界碑，标示着古典文学的结束，现代文学的起始。"
+        },
+        {
+            tag: "背景",
+            content: "文学革命的爆发有其历史背景，在相当程度上利用了晚清以来文学变革的态势与思想资源，如‘诗界革命’、‘小说界革命’等。"
+        },
+        {
+            tag: "时代性格",
+            content: "充分自由发展是‘五四’时期一种突出的文学时代性格。创作给人以活跃、单纯、亲切的感觉，追求文学个性化。"
+        },
+        {
+            tag: "主流方法",
+            content: "现实主义成为‘五四’时期最有实力的创作方法。鲁迅小说创作的极大成功，将现实主义提高到与世界文学对话的高水平。"
+        },
+        {
+            tag: "多元并存",
+            content: "‘五四’时期并不存在现实主义独尊，浪漫主义也极受青睐。各种文体充溢着强烈的主观情绪与抒情色彩。"
+        },
+        {
+            tag: "代表作品",
+            content: "郭沫若以《女神》为代表的自由体诗，充盈着浪漫主义色彩；湖畔诗人的爱情诗，以及冰心、宗白华的哲理小诗。"
+        },
+        {
+            tag: "局限性",
+            content: "早期新文学作品内容仍比较狭窄，题材、情节、形象有许多类似和重复，年轻作家还来不及融汇吸收外来和传统写法。"
+        },
+        {
+            tag: "创作群体",
+            content: "文学研究会、创造社等社团的成立，推动了文学思潮的多元发展。文学研究会主张‘为人生的文学’。"
         }
+    ];
+
+    const displayArea = document.getElementById('display-area');
+    const npcTalk = document.getElementById('npc-talk');
+
+    function quickSearch(val) {
+        document.getElementById('search-input').value = val;
+        handleSearch();
     }
 
-    function removeBook(index) {
-        if(confirm("确定从书架移除这本书吗？")) {
-            myShelf.splice(index, 1);
-            updateShelfUI();
-        }
-    }
+    function handleSearch() {
+        const query = document.getElementById('search-input').value.trim();
+        if (!query) return;
 
-    function clearAll() {
-        if(confirm("确定清空书架吗？")) {
-            myShelf = [];
-            updateShelfUI();
-        }
-    }
+        // 检索逻辑
+        const results = CHAPTER_DATA.filter(item => 
+            item.content.includes(query) || item.tag.includes(query)
+        );
 
-    // --- 文件/粘贴处理 ---
-    document.getElementById('file-input').onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            saveToShelf(file.name, ev.target.result);
-        };
-        reader.readAsText(file);
-    };
-
-    function addFromPaste() {
-        const text = document.getElementById('paste-input').value.trim();
-        if (text.length < 5) return alert("请先粘贴内容");
-        saveToShelf("手动粘贴内容-" + (myShelf.length + 1), text);
-        document.getElementById('paste-input').value = "";
-    }
-
-    function saveToShelf(name, content) {
-        // 改进的切分逻辑：兼容各种换行符
-        const segs = content.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 5);
-        if (segs.length === 0) return alert("文件中没有有效内容");
-        
-        myShelf.push({ name: name, segments: segs });
-        updateShelfUI();
-        alert(`《${name}》已存入书架！`);
-    }
-
-    // --- 检索逻辑 ---
-    function executeSearch() {
-        const kw = document.getElementById('query-input').value.trim();
-        if (!kw) return;
-
-        const shelfView = document.getElementById('shelf-view');
-        const searchView = document.getElementById('search-view');
-        const backBtn = document.getElementById('btn-back');
-
-        // 切换视图
-        shelfView.style.display = 'none';
-        searchView.style.display = 'block';
-        backBtn.classList.add('show');
-
-        // 在所有书籍中搜索
-        let allMatches = [];
-        myShelf.forEach(book => {
-            const matches = book.segments.filter(s => s.includes(kw));
-            matches.forEach(m => allMatches.push({ bookName: book.name, text: m }));
-        });
-
-        if (allMatches.length === 0) {
-            searchView.innerHTML = `<div class="empty-tip">在 ${myShelf.length} 本书中均未发现关键词“${kw}”</div>`;
-        } else {
-            searchView.innerHTML = `<div style="color:#999; font-size:12px; margin-bottom:10px;">检索到 ${allMatches.length} 条匹配内容：</div>`;
-            // 显示最近的30条
-            allMatches.slice(0, 30).forEach(res => {
+        if (results.length > 0) {
+            npcTalk.innerText = `找到了 ${results.length} 条关于“${query}”的知识点！`;
+            // 渲染结果
+            displayArea.innerHTML = "";
+            results.forEach(res => {
                 const card = document.createElement('div');
-                card.className = 'msg-card';
-                const highlighted = res.text.split(kw).join(`<mark>${kw}</mark>`);
+                card.className = 'card';
+                // 关键词高亮
+                const highlighted = res.content.split(query).join(`<mark>${query}</mark>`);
                 card.innerHTML = `
-                    <div style="font-size:11px; color:var(--pku-red); font-weight:bold; margin-bottom:5px;">来自：《${res.bookName}》</div>
+                    <div class="card-tag">${res.tag}</div>
                     <div>${highlighted}</div>
                 `;
-                searchView.appendChild(card);
+                displayArea.appendChild(card);
             });
+        } else {
+            npcTalk.innerText = `抱歉，第一章里好像没提到“${query}”...`;
+            const empty = document.createElement('div');
+            empty.className = 'card';
+            empty.innerText = "未找到结果，试试 鲁迅、现实主义 或 女神。";
+            displayArea.prepend(empty);
         }
         
-        document.getElementById('query-input').value = "";
-        document.getElementById('main').scrollTop = 0;
+        document.getElementById('search-input').value = "";
     }
 
-    function showShelf() {
-        document.getElementById('shelf-view').style.display = 'block';
-        document.getElementById('search-view').style.display = 'none';
-        document.getElementById('btn-back').classList.remove('show');
+    // 回车搜索
+    document.getElementById('search-input').onkeypress = (e) => {
+        if(e.key === 'Enter') handleSearch();
     }
-
-    // 适配键盘
-    document.getElementById('query-input').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') {
-            executeSearch();
-            document.activeElement.blur();
-        }
-    });
 </script>
 
 </body>
