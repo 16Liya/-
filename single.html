@@ -3,257 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>燕园伴读-离线版</title>
+    <title>燕园伴读-书架版</title>
     <style>
-        :root { --pku-red: #8b0012; --bg: #f8f8f8; }
-        
+        :root { --pku-red: #8b0012; --bg: #f5f5f7; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: sans-serif; 
-            margin: 0; 
-            background: var(--bg); 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh;
-            /* 关键修复：防止底部被遮挡 */
-            height: -webkit-fill-available;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; background: var(--bg); display: flex; flex-direction: column; 
+            height: 100vh; height: -webkit-fill-available; overflow: hidden;
         }
 
-        /* 导航栏 */
-        .nav { 
-            background: var(--pku-red); 
-            color: white; 
-            padding: calc(env(safe-area-inset-top) + 10px) 15px 10px; 
-            text-align: center; 
-            font-weight: bold; 
-            flex-shrink: 0;
-            z-index: 100;
+        /* 顶部栏 */
+        header { 
+            background: var(--pku-red); color: white; 
+            padding: calc(env(safe-area-inset-top) + 12px) 15px 12px; 
+            text-align: center; font-weight: bold; flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .back-btn { font-size: 14px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 4px; visibility: hidden; }
+        .back-btn.show { visibility: visible; }
 
-        /* 主体内容区 */
-        #content { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px;
-            /* 为底部固定栏留出空间 */
-            padding-bottom: 100px; 
-        }
+        /* 主体内容 */
+        #main { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; }
 
-        /* 卡片样式 */
-        .card { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            line-height: 1.6; 
-            font-size: 16px;
-            word-wrap: break-word;
+        /* 书架卡片 */
+        .shelf-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .book-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; border-bottom: 1px solid #eee; 
         }
-        .card.match { border-left: 5px solid var(--pku-red); animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .book-item:last-child { border-bottom: none; }
+        .book-info { flex: 1; margin-right: 10px; }
+        .book-name { font-weight: bold; font-size: 15px; color: #333; }
+        .book-meta { font-size: 12px; color: #999; margin-top: 4px; }
+        .del-btn { color: #ff4d4f; font-size: 14px; padding: 5px; cursor: pointer; }
+
+        /* 结果卡片 */
+        .msg-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 5px solid var(--pku-red); line-height: 1.6; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
+        mark { background: #ffeb3b; color: black; padding: 0 2px; border-radius: 2px; }
+
+        /* 初始化引导 */
+        .init-box { text-align: center; padding: 30px 10px; }
+        .upload-btn { 
+            background: var(--pku-red); color: white; border: none; 
+            padding: 15px; border-radius: 10px; width: 100%; 
+            font-size: 16px; font-weight: bold; margin-bottom: 15px;
+        }
+        textarea { width: 100%; height: 100px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; margin-top: 10px; }
+
+        /* 底部搜索栏 */
+        .footer { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: white; border-top: 1px solid #eee;
+            padding: 10px 15px calc(env(safe-area-inset-bottom) + 10px);
+            display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .footer.hidden { transform: translateY(100%); }
         
-        mark { background: #ffeb3b; color: black; font-weight: bold; padding: 0 2px; }
+        input[type="text"] { flex: 1; height: 44px; border: 1px solid #ddd; border-radius: 22px; padding: 0 15px; font-size: 16px; outline: none; background: #f9f9f9; }
+        .search-btn { background: var(--pku-red); color: white; border: none; width: 70px; border-radius: 22px; font-weight: bold; }
 
-        /* 初始化引导界面 */
-        .init-box { 
-            background: white; 
-            padding: 40px 20px; 
-            border-radius: 15px; 
-            text-align: center; 
-            border: 2px dashed #ccc; 
-            margin: 20px 0;
-        }
-        .btn-up { 
-            background: var(--pku-red); 
-            color: white; 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-            font-size: 16px; 
-            width: 100%;
-            font-weight: bold;
-        }
-        textarea { 
-            width: 100%; 
-            height: 120px; 
-            margin-top: 15px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            padding: 12px; 
-            font-size: 14px;
-            background: #fafafa;
-        }
-
-        /* 底部固定搜索栏 - 彻底修复位置 */
-        .bottom-bar { 
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white; 
-            padding: 10px 15px calc(env(safe-area-inset-bottom) + 10px); 
-            display: flex; 
-            gap: 10px; 
-            border-top: 1px solid #eee;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 1000;
-        }
-        
-        input[type="text"] { 
-            flex: 1; 
-            height: 44px; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 22px; 
-            padding: 0 18px; 
-            font-size: 16px; 
-            outline: none;
-            background: #f9f9f9;
-        }
-        input[type="text"]:focus { border-color: var(--pku-red); background: white; }
-        
-        .btn-search { 
-            background: var(--pku-red); 
-            color: white; 
-            border: none; 
-            width: 70px; 
-            border-radius: 22px; 
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        
-        .hide { display: none !important; }
+        .empty-tip { text-align: center; color: #999; margin-top: 50px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="nav">燕园伴读 (离线单机版)</div>
+<header>
+    <div id="btn-back" class="back-btn" onclick="showShelf()">书架</div>
+    <div style="font-size: 17px;">燕园伴读</div>
+    <div style="width: 40px;"></div>
+</header>
 
-<div id="content">
-    <!-- 初始化区域 -->
-    <div id="init-ui" class="init-box">
-        <div style="font-size: 50px;">📜</div>
-        <h3 style="margin: 15px 0;">加载学习资料</h3>
-        <p style="color: #888; font-size: 14px; line-height: 1.4;">您可以直接选择本地 TXT 文件<br>或者直接在下方框内粘贴文字内容</p>
-        
-        <input type="file" id="file-in" accept=".txt" class="hide">
-        <button class="btn-up" onclick="document.getElementById('file-in').click()">📁 选择 TXT 文件</button>
-        
-        <div style="margin: 20px 0; color: #ddd; display: flex; align-items: center; justify-content: center;">
-            <div style="flex:1; height:1px; background:#eee;"></div>
-            <div style="padding:0 10px; font-size:12px;">或者</div>
-            <div style="flex:1; height:1px; background:#eee;"></div>
+<div id="main">
+    <!-- 这里动态切换 书架界面 和 搜索结果界面 -->
+    <div id="shelf-view">
+        <div class="shelf-card">
+            <h3 style="margin-top:0; font-size:16px;">📚 我的书架</h3>
+            <div id="book-list">
+                <!-- 书籍列表 -->
+                <div class="empty-tip">书架空空如也，请加载资料</div>
+            </div>
         </div>
-        
-        <textarea id="paste-in" placeholder="直接在此处粘贴书籍全文..."></textarea>
-        <button class="btn-up" style="background:#444;" onclick="loadFromPaste()">⌨️ 确认粘贴内容</button>
+
+        <div class="init-box">
+            <input type="file" id="file-input" accept=".txt" style="display:none">
+            <button class="upload-btn" onclick="document.getElementById('file-input').click()">➕ 上传新书籍 (TXT)</button>
+            <p style="font-size:12px; color:#999;">或者手动粘贴文本内容：</p>
+            <textarea id="paste-input" placeholder="在此粘贴文字..."></textarea>
+            <button class="upload-btn" style="background:#555; margin-top:10px;" onclick="addFromPaste()">💾 确认粘贴并存入书架</button>
+            <button onclick="clearAll()" style="background:none; border:none; color:#999; font-size:12px; margin-top:20px; text-decoration:underline;">清空所有书籍</button>
+        </div>
+    </div>
+
+    <div id="search-view" class="hide" style="display:none;">
+        <!-- 检索结果显示在这里 -->
     </div>
 </div>
 
-<!-- 搜索栏始终置顶在最下方 -->
-<div class="bottom-bar">
-    <input type="text" id="search-kw" placeholder="输入关键词，如：北大">
-    <button class="btn-search" onclick="startSearch()">检索</button>
+<div class="footer hidden" id="search-footer">
+    <input type="text" id="query-input" placeholder="输入关键词检索内容...">
+    <button class="search-btn" onclick="executeSearch()">检索</button>
 </div>
 
 <script>
-    let library = []; 
+    // 存储所有书籍的结构: [{ name: '', segments: [] }]
+    let myShelf = [];
 
-    // 1. 处理文件上传
-    document.getElementById('file-in').onchange = function(e) {
+    // --- 书架管理 ---
+    function updateShelfUI() {
+        const list = document.getElementById('book-list');
+        const footer = document.getElementById('search-footer');
+        
+        if (myShelf.length === 0) {
+            list.innerHTML = '<div class="empty-tip">书架空空如也，请加载资料</div>';
+            footer.classList.add('hidden');
+        } else {
+            list.innerHTML = myShelf.map((book, index) => `
+                <div class="book-item">
+                    <div class="book-info">
+                        <div class="book-name">${book.name}</div>
+                        <div class="book-meta">共 ${book.segments.length} 个知识片段</div>
+                    </div>
+                    <div class="del-btn" onclick="removeBook(${index})">删除</div>
+                </div>
+            `).join('');
+            footer.classList.remove('hidden');
+        }
+    }
+
+    function removeBook(index) {
+        if(confirm("确定从书架移除这本书吗？")) {
+            myShelf.splice(index, 1);
+            updateShelfUI();
+        }
+    }
+
+    function clearAll() {
+        if(confirm("确定清空书架吗？")) {
+            myShelf = [];
+            updateShelfUI();
+        }
+    }
+
+    // --- 文件/粘贴处理 ---
+    document.getElementById('file-input').onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(ev) {
-            processText(ev.target.result, file.name);
+        reader.onload = (ev) => {
+            saveToShelf(file.name, ev.target.result);
         };
         reader.readAsText(file);
     };
 
-    // 2. 处理直接粘贴
-    function loadFromPaste() {
-        const txt = document.getElementById('paste-in').value.trim();
-        if (txt.length < 5) return alert("请先粘贴一些文字内容");
-        processText(txt, "手动粘贴的资料");
+    function addFromPaste() {
+        const text = document.getElementById('paste-input').value.trim();
+        if (text.length < 5) return alert("请先粘贴内容");
+        saveToShelf("手动粘贴内容-" + (myShelf.length + 1), text);
+        document.getElementById('paste-input').value = "";
     }
 
-    // 3. 处理文本逻辑
-    function processText(fullText, name) {
-        // 增强切分逻辑：按换行切分，并过滤掉太短的行
-        library = fullText.split(/\n+/).map(s => s.trim()).filter(s => s.length > 2);
+    function saveToShelf(name, content) {
+        // 改进的切分逻辑：兼容各种换行符
+        const segs = content.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 5);
+        if (segs.length === 0) return alert("文件中没有有效内容");
         
-        if(library.length === 0) return alert("解析失败，请检查文本内容");
-
-        document.getElementById('init-ui').classList.add('hide');
-        const content = document.getElementById('content');
-        content.innerHTML = `
-            <div class="card" style="text-align:center; color:#666; border:1px solid #eee;">
-                <b style="color:var(--pku-red)">✅ 载入成功</b><br>
-                《${name}》<br>
-                共识别 ${library.length} 条知识点<br>
-                请在下方输入关键词开始检索
-            </div>
-        `;
+        myShelf.push({ name: name, segments: segs });
+        updateShelfUI();
+        alert(`《${name}》已存入书架！`);
     }
 
-    // 4. 执行检索
-    function startSearch() {
-        const kw = document.getElementById('search-kw').value.trim();
-        const content = document.getElementById('content');
-        
+    // --- 检索逻辑 ---
+    function executeSearch() {
+        const kw = document.getElementById('query-input').value.trim();
         if (!kw) return;
-        if (library.length === 0) return alert("请先载入资料");
 
-        // 查找包含关键词的段落
-        const results = library.filter(line => line.includes(kw));
+        const shelfView = document.getElementById('shelf-view');
+        const searchView = document.getElementById('search-view');
+        const backBtn = document.getElementById('btn-back');
 
-        if (results.length === 0) {
-            const tip = document.createElement('div');
-            tip.className = 'card';
-            tip.style.textAlign = "center";
-            tip.innerHTML = `❌ 未在书中找到“${kw}”`;
-            content.prepend(tip);
+        // 切换视图
+        shelfView.style.display = 'none';
+        searchView.style.display = 'block';
+        backBtn.classList.add('show');
+
+        // 在所有书籍中搜索
+        let allMatches = [];
+        myShelf.forEach(book => {
+            const matches = book.segments.filter(s => s.includes(kw));
+            matches.forEach(m => allMatches.push({ bookName: book.name, text: m }));
+        });
+
+        if (allMatches.length === 0) {
+            searchView.innerHTML = `<div class="empty-tip">在 ${myShelf.length} 本书中均未发现关键词“${kw}”</div>`;
         } else {
-            // 清理初始欢迎语
-            if (content.querySelector('b')) {
-                content.innerHTML = "";
-            }
-
-            // 显示结果（取匹配到的前 30 条）
-            results.slice(0, 30).reverse().forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'card match';
-                const regex = new RegExp(kw, 'gi');
-                div.innerHTML = text.replace(regex, '<mark>$&</mark>');
-                content.prepend(div);
+            searchView.innerHTML = `<div style="color:#999; font-size:12px; margin-bottom:10px;">检索到 ${allMatches.length} 条匹配内容：</div>`;
+            // 显示最近的30条
+            allMatches.slice(0, 30).forEach(res => {
+                const card = document.createElement('div');
+                card.className = 'msg-card';
+                const highlighted = res.text.split(kw).join(`<mark>${kw}</mark>`);
+                card.innerHTML = `
+                    <div style="font-size:11px; color:var(--pku-red); font-weight:bold; margin-bottom:5px;">来自：《${res.bookName}》</div>
+                    <div>${highlighted}</div>
+                `;
+                searchView.appendChild(card);
             });
         }
         
-        document.getElementById('search-kw').value = "";
-        // 搜索后视图滚动到顶部显示最新结果
-        content.scrollTop = 0; 
+        document.getElementById('query-input').value = "";
+        document.getElementById('main').scrollTop = 0;
     }
 
-    // 回车键支持
-    document.getElementById('search-kw').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            startSearch();
-            this.blur(); // 收起键盘
+    function showShelf() {
+        document.getElementById('shelf-view').style.display = 'block';
+        document.getElementById('search-view').style.display = 'none';
+        document.getElementById('btn-back').classList.remove('show');
+    }
+
+    // 适配键盘
+    document.getElementById('query-input').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            executeSearch();
+            document.activeElement.blur();
         }
     });
-
-    // 修复 iOS/某些安卓浏览器 100vh 的显示问题
-    window.onload = function() {
-        const resetHeight = () => {
-            document.body.style.height = window.innerHeight + 'px';
-        }
-        window.addEventListener('resize', resetHeight);
-        resetHeight();
-    }
 </script>
 
 </body>
