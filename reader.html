@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>燕园伴读 - 经典对话</title>
+    <title>燕园伴读 - 聚合 API 版</title>
     <style>
         :root {
             --pku-red: #8b0012;
             --bg-color: #f5f5f5;
-            --user-bubble: #95ec69; /* 经典的绿色气泡 */
+            --user-bubble: #95ec69; 
             --ai-bubble: #ffffff;
             --text-main: #191919;
             --border-color: #e7e7e7;
@@ -35,19 +35,27 @@
 
         /* 配置抽屉 */
         .drawer {
-            position: fixed; top: 0; right: 0; width: 85%; height: 100%;
-            background: #fff; z-index: 1001; transform: translateX(100%);
-            transition: transform 0.3s ease; padding: 25px 20px;
+            position: fixed; top: 0; right: 0; width: 85%; max-width: 350px; height: 100%;
+            background: #f7f7f7; z-index: 1001; transform: translateX(100%);
+            transition: transform 0.3s ease; padding: 25px 20px; overflow-y: auto;
             box-shadow: -5px 0 15px rgba(0,0,0,0.05);
         }
         .drawer.active { transform: translateX(0); }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
         .drawer-overlay.active { display: block; }
 
-        .drawer h3 { margin-bottom: 15px; font-size: 1.1rem; color: var(--pku-red); border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .label { font-size: 0.85rem; color: #666; margin-bottom: 5px; display: block; }
-        .input-item { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
-        .btn-save { width: 100%; padding: 12px; background: var(--pku-red); color: white; border: none; border-radius: 6px; font-weight: bold; }
+        .drawer h3 { margin-bottom: 20px; font-size: 1.1rem; color: var(--pku-red); border-bottom: 1px solid #ddd; padding-bottom: 10px; display: flex; justify-content: space-between;}
+        
+        .config-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .label { font-size: 0.85rem; color: #666; margin-bottom: 8px; display: block; }
+        .input-item { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #fff; }
+        .input-item:focus { border-color: var(--pku-red); outline: none; }
+        
+        .flex-row { display: flex; gap: 10px; }
+        .btn-fetch { padding: 0 15px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; color: #333; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+        .btn-fetch:active { background: #e0e0e0; }
+
+        .btn-save { width: 100%; padding: 12px; background: #07c160; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; margin-top: 10px; }
 
         /* 聊天区域 */
         .chat-main { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
@@ -56,27 +64,26 @@
         .msg-row.user { justify-content: flex-end; }
         .msg-row.ai { justify-content: flex-start; }
 
-        .avatar { width: 40px; height: 40px; border-radius: 4px; background-size: cover; flex-shrink: 0; }
+        .avatar { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
         .ai .avatar { background-color: var(--pku-red); margin-right: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; }
         .user .avatar { background-color: #ddd; margin-left: 10px; }
 
-        .bubble-wrap { max-width: 70%; position: relative; }
+        .bubble-wrap { max-width: 75%; position: relative; }
         .bubble { 
-            padding: 10px 12px; border-radius: 6px; font-size: 1rem; line-height: 1.5; 
+            padding: 10px 14px; border-radius: 6px; font-size: 1rem; line-height: 1.6; 
             position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .ai .bubble { background: var(--ai-bubble); color: #000; border: 1px solid #e0e0e0; }
         .user .bubble { background: var(--user-bubble); color: #000; }
 
-        /* 气泡小箭头 */
-        .bubble::after { content: ""; position: absolute; top: 12px; width: 0; height: 0; border: 6px solid transparent; }
+        .bubble::after { content: ""; position: absolute; top: 14px; width: 0; height: 0; border: 6px solid transparent; }
         .ai .bubble::after { left: -12px; border-right-color: var(--ai-bubble); }
         .user .bubble::after { right: -12px; border-left-color: var(--user-bubble); }
 
         /* 交互菜单 */
         .msg-actions { 
             position: absolute; bottom: -25px; display: none; gap: 10px; font-size: 0.75rem; color: #888; 
-            background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 10px; border: 1px solid #eee;
+            background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 10px; border: 1px solid #eee; z-index: 10;
         }
         .msg-row:active .msg-actions, .msg-row.show-menu .msg-actions { display: flex; }
         .action-item { cursor: pointer; }
@@ -86,75 +93,99 @@
         .footer { 
             background: #f7f7f7; border-top: 1px solid var(--border-color);
             padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-            display: flex; align-items: flex-end; gap: 8px;
+            display: flex; align-items: flex-end; gap: 10px;
         }
         .input-area { 
             flex: 1; background: white; border: 1px solid #ddd; border-radius: 6px;
-            padding: 8px 12px; min-height: 38px; max-height: 120px; 
+            padding: 10px 12px; min-height: 40px; max-height: 120px; 
             font-size: 16px; outline: none; resize: none; line-height: 1.4;
         }
         .btn-send { 
-            width: 60px; height: 38px; background: #07c160; color: white; 
-            border: none; border-radius: 4px; font-weight: 500; font-size: 0.9rem;
+            width: 60px; height: 40px; background: #07c160; color: white; 
+            border: none; border-radius: 6px; font-weight: 500; font-size: 0.95rem; flex-shrink: 0;
         }
         .btn-send:disabled { opacity: 0.5; }
 
-        .loading-dots { font-size: 0.8rem; color: #999; margin-left: 50px; display: none; }
+        .loading-dots { font-size: 0.8rem; color: #999; margin-left: 55px; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="width: 30px;"></div> <!-- 占位平衡 -->
-    <div class="header-title">燕园伴读 (北大教授)</div>
+    <div style="width: 30px;"></div>
+    <div class="header-title">燕园伴读 (全模型版)</div>
     <div class="config-icon" onclick="toggleDrawer(true)">⚙️</div>
 </header>
 
 <div class="drawer-overlay" id="overlay" onclick="toggleDrawer(false)"></div>
 <div class="drawer" id="drawer">
-    <h3>系统设置</h3>
-    <label class="label">API Key</label>
-    <input type="password" id="api-key" class="input-item" placeholder="中转 API Key">
+    <h3>
+        <span>API 设置</span>
+        <span onclick="toggleDrawer(false)" style="color:#999;font-weight:normal;cursor:pointer;">✕</span>
+    </h3>
     
-    <label class="label">接口地址 (中转站提供)</label>
-    <input type="text" id="proxy-url" class="input-item" placeholder="例如: https://api.xxx.com">
+    <div class="config-card">
+        <label class="label">反代地址 (Base URL)</label>
+        <input type="text" id="proxy-url" class="input-item" placeholder="例如: https://api.gemai.cc">
+        
+        <label class="label" style="margin-top:15px">API Key</label>
+        <input type="password" id="api-key" class="input-item" placeholder="sk-........................">
+        
+        <label class="label" style="margin-top:15px">模型选择</label>
+        <div class="flex-row">
+            <select id="model-select" class="input-item" style="margin-bottom:0;">
+                <option value="">请先拉取模型列表...</option>
+            </select>
+            <button class="btn-fetch" onclick="fetchModels()" id="fetch-btn">拉取</button>
+        </div>
+    </div>
+
+    <div class="config-card">
+        <label class="label">上传专业课资料 (TXT)</label>
+        <input type="file" id="file-input" accept=".txt" style="display:none" onchange="handleFile(event)">
+        <button class="input-item" style="background:#f9f9f9; border:1px dashed #ccc; text-align:center; color:#333;" onclick="document.getElementById('file-input').click()">点击选择书籍</button>
+        <div id="book-info" style="font-size:12px; color:#999; text-align:center; margin-top:8px;">尚未加载资料</div>
+    </div>
     
-    <label class="label">上传书籍 (TXT)</label>
-    <input type="file" id="file-input" accept=".txt" style="display:none" onchange="handleFile(event)">
-    <button class="input-item" style="background:#f0f0f0; border:1px dashed #ccc;" onclick="document.getElementById('file-input').click()">点击选择书籍</button>
-    <div id="book-info" style="font-size:12px; color:#999; text-align:center;">尚未加载资料</div>
-    
-    <button class="btn-save" style="margin-top:20px" onclick="saveSettings()">保存配置并关闭</button>
+    <button class="btn-save" onclick="saveSettings()">保存配置</button>
 </div>
 
 <main class="chat-main" id="chat-content">
     <div class="msg-row ai">
         <div class="avatar">PKU</div>
         <div class="bubble-wrap">
-            <div class="bubble">同学你好。我是负责辅导你专业课的教授。请加载书籍资料并配置好 API，我们可以开始研讨。</div>
+            <div class="bubble">同学你好。如果你已经购买了 API，请在右上角配置“反代地址”和“Key”，然后拉取选择你想用的模型。加载教材后即可向我提问。</div>
         </div>
     </div>
 </main>
 
-<div class="loading-dots" id="loading-hint">教授正在组织语言...</div>
+<div class="loading-dots" id="loading-hint">教授正在翻阅资料思考中...</div>
 
 <div class="footer">
-    <textarea class="input-area" id="user-input" rows="1" placeholder="虚心求教..." oninput="reSize(this)"></textarea>
+    <textarea class="input-area" id="user-input" rows="1" placeholder="请教教授..." oninput="reSize(this)"></textarea>
     <button class="btn-send" id="send-btn" onclick="handleSend()">发送</button>
 </div>
 
 <script>
     let bookData = "";
-    let messageLog = [];
+    // 标准的 OpenAI 会话上下文
+    let messageLog = []; 
 
-    // 初始化动态高度
     function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
     window.addEventListener('resize', setVH);
     setVH();
 
+    // 初始化加载本地存储的配置
     window.onload = () => {
+        document.getElementById('proxy-url').value = localStorage.getItem('chat_proxy') || 'https://api.gemai.cc';
         document.getElementById('api-key').value = localStorage.getItem('chat_key') || '';
-        document.getElementById('proxy-url').value = localStorage.getItem('chat_proxy') || 'https://generativelanguage.googleapis.com';
+        
+        // 恢复之前拉取的模型列表和选中的模型
+        const savedModels = JSON.parse(localStorage.getItem('chat_model_list') || '[]');
+        const savedCurrent = localStorage.getItem('chat_current_model');
+        if (savedModels.length > 0) {
+            populateModelSelect(savedModels, savedCurrent);
+        }
     };
 
     function toggleDrawer(show) {
@@ -163,9 +194,63 @@
     }
 
     function saveSettings() {
-        localStorage.setItem('chat_key', document.getElementById('api-key').value.trim());
         localStorage.setItem('chat_proxy', document.getElementById('proxy-url').value.trim());
+        localStorage.setItem('chat_key', document.getElementById('api-key').value.trim());
+        localStorage.setItem('chat_current_model', document.getElementById('model-select').value);
         toggleDrawer(false);
+    }
+
+    // 🌟 新功能：拉取模型列表 🌟
+    async function fetchModels() {
+        let proxy = document.getElementById('proxy-url').value.trim();
+        let key = document.getElementById('api-key').value.trim();
+        let fetchBtn = document.getElementById('fetch-btn');
+
+        if (!proxy || !key) return alert("请先填写反代地址和 API Key！");
+        
+        // 自动清理地址末尾的斜杠和 /v1
+        proxy = proxy.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+        
+        fetchBtn.innerText = "拉取中..";
+        fetchBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${proxy}/v1/models`, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${key}` }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.data && Array.isArray(data.data)) {
+                // 提取模型 ID 并按字母排序
+                const models = data.data.map(m => m.id).sort();
+                populateModelSelect(models, "");
+                
+                // 保存到本地
+                localStorage.setItem('chat_model_list', JSON.stringify(models));
+                alert(`模型列表已更新（共 ${models.length} 个模型）`);
+            } else {
+                throw new Error(data.error?.message || "接口返回格式不正确");
+            }
+        } catch (err) {
+            alert(`拉取失败：${err.message}\n请检查地址或 Key 是否正确。`);
+        } finally {
+            fetchBtn.innerText = "拉取";
+            fetchBtn.disabled = false;
+        }
+    }
+
+    function populateModelSelect(models, selectedId) {
+        const select = document.getElementById('model-select');
+        select.innerHTML = '';
+        models.forEach(modelId => {
+            const opt = document.createElement('option');
+            opt.value = modelId;
+            opt.textContent = modelId;
+            select.appendChild(opt);
+        });
+        if (selectedId) select.value = selectedId;
     }
 
     function reSize(el) {
@@ -180,8 +265,7 @@
         reader.onload = (ev) => {
             bookData = ev.target.result;
             document.getElementById('book-info').innerText = `✅ 已加载: ${file.name}`;
-            renderMsg('ai', `书籍《${file.name}》已载入。我已准备好为你答疑解惑。`);
-            toggleDrawer(false);
+            renderMsg('ai', `资料《${file.name}》已载入大脑。请提问。`);
         };
         reader.readAsText(file);
     }
@@ -193,7 +277,6 @@
         row.className = `msg-row ${role}`;
         row.id = id;
         
-        // 点击显示菜单
         row.onclick = () => {
             document.querySelectorAll('.msg-row').forEach(r => r.classList.remove('show-menu'));
             row.classList.toggle('show-menu');
@@ -229,14 +312,17 @@
         document.getElementById('user-input').focus();
     }
 
+    // 🌟 底层重构：使用全网通用的 OpenAI Chat 格式 🌟
     async function handleSend() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
+        let proxy = document.getElementById('proxy-url').value.trim();
         const key = document.getElementById('api-key').value.trim();
-        const proxy = document.getElementById('proxy-url').value.trim() || 'https://generativelanguage.googleapis.com';
+        const model = document.getElementById('model-select').value;
 
-        if(!text || !key) return alert("请检查输入或 API 设置");
-        if(!bookData) return alert("请先上传书籍文本");
+        if(!text) return;
+        if(!key || !proxy || !model) return alert("请先在设置中完成 API 配置并选择模型！");
+        if(!bookData) return alert("教授表示：请先上传 TXT 书籍资料才能进行探讨！");
 
         renderMsg('user', text);
         input.value = "";
@@ -247,29 +333,47 @@
         hint.style.display = 'block';
         btn.disabled = true;
 
-        const systemContent = `你是一位北大中文系教授。请严格根据以下书籍内容回答学生提问：\n${bookData.substring(0, 500000)}`;
-        messageLog.push({ role: "user", parts: [{ text: text }] });
+        // 统一处理代理地址后缀
+        proxy = proxy.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+
+        // 构建上下文：System 赋予人设和资料，之后追加用户的提问
+        messageLog.push({ role: "user", content: text });
+
+        const payload = {
+            model: model,
+            messages: [
+                { role: "system", content: `你是一位北京大学中文系教授。请严格根据以下书籍资料回答学生问题，如果不在此资料中请如实告知。\n\n[书籍资料开始]\n${bookData.substring(0, 500000)}\n[书籍资料结束]` },
+                ...messageLog
+            ],
+            temperature: 0.3
+        };
 
         try {
-            const baseUrl = proxy.replace(/\/$/, '');
-            const response = await fetch(`${baseUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            const response = await fetch(`${proxy}/v1/chat/completions`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    systemInstruction: { parts: [{ text: systemContent }] },
-                    contents: messageLog
-                })
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${key}`
+                },
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
-            if(!response.ok) throw new Error(result.error?.message || "请求失败");
+            
+            if(!response.ok) {
+                throw new Error(result.error?.message || "接口调用异常");
+            }
 
-            const aiText = result.candidates[0].content.parts[0].text;
+            const aiText = result.choices[0].message.content;
             renderMsg('ai', aiText);
-            messageLog.push({ role: "model", parts: [{ text: aiText }] });
+            
+            // 将 AI 的回复存入上下文，形成连续对话
+            messageLog.push({ role: "assistant", content: aiText });
 
         } catch (err) {
-            renderMsg('ai', `【教授断线】${err.message}\n请检查 API Key 是否有效，或中转地址是否填写正确。`);
+            renderMsg('ai', `【教授失联】报错信息：${err.message}\n可能是由于单次发送的内容（字数）超过了该模型的上限，或者您的 API 余额不足。`);
+            // 出错时，把用户刚才发的问题移出历史记录，以免卡死
+            messageLog.pop(); 
         } finally {
             hint.style.display = 'none';
             btn.disabled = false;
@@ -278,4 +382,5 @@
 </script>
 </body>
 </html>
+
 
