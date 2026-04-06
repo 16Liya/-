@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>燕园伴读 - 最终调试版</title>
+    <title>燕园伴读 - 考研直通版</title>
     <style>
         :root {
             --pku-red: #8b0012;
@@ -12,7 +12,7 @@
             --chat-bg: #ffffff;
             --text-main: #2c3e50;
             --border: #e0e0e0;
-            --vh: 1vh; /* 兼容性高度变量 */
+            --vh: 1vh;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Noto Serif SC", "Songti SC", serif; -webkit-tap-highlight-color: transparent; }
@@ -30,9 +30,9 @@
             z-index: 100; flex-shrink: 0;
         }
         .logo { font-size: 1.1rem; font-weight: bold; }
-        .config-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8rem; }
+        .config-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; }
 
-        /* 全屏配置遮罩 */
+        /* 配置面板 */
         .config-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: white; z-index: 1000; transform: translateY(-100%);
@@ -40,28 +40,34 @@
             padding: 40px 20px; overflow-y: auto;
         }
         .config-panel.active { transform: translateY(0); }
-        .close-config { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: var(--text-main); }
+        .close-config { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: var(--text-main); padding: 10px; }
 
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--pku-red); margin: 20px 0 10px; border-left: 3px solid var(--pku-red); padding-left: 8px; }
-        .input-box { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; margin-bottom: 10px; }
-        .btn-action { width: 100%; padding: 14px; background: var(--pku-red); color: white; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; }
+        .input-box { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #fafafa; }
+        .btn-action { width: 100%; padding: 14px; background: var(--pku-red); color: white; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; font-size: 1rem; }
         
         /* 聊天区域 */
         .chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--chat-bg); position: relative; }
         .chat-history { 
             flex: 1; padding: 15px; overflow-y: auto; 
             display: flex; flex-direction: column; gap: 15px;
-            padding-bottom: 50px;
+            padding-bottom: 60px;
         }
 
         /* 消息气泡 */
-        .message { display: flex; flex-direction: column; max-width: 90%; }
+        .message { display: flex; flex-direction: column; max-width: 92%; position: relative; }
         .msg-user { align-self: flex-end; }
         .msg-ai { align-self: flex-start; }
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 1rem; line-height: 1.6; word-break: break-all; }
+        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 1rem; line-height: 1.6; word-break: break-all; position: relative; }
         .msg-user .bubble { background: var(--pku-red); color: white; border-bottom-right-radius: 2px; }
         .msg-ai .bubble { background: var(--bg-color); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
         .msg-meta { font-size: 0.7rem; color: #999; margin: 4px 6px; }
+        .msg-user .msg-meta { text-align: right; }
+
+        /* 消息菜单 */
+        .msg-menu { display: none; gap: 10px; margin-top: 5px; padding: 0 5px; }
+        .message.active .msg-menu { display: flex; }
+        .menu-item { font-size: 0.75rem; color: var(--pku-red); cursor: pointer; text-decoration: underline; }
 
         /* 输入面板 */
         .input-panel {
@@ -72,188 +78,213 @@
         .chat-input { 
             flex: 1; min-height: 44px; max-height: 120px; 
             padding: 10px 15px; border: 1px solid var(--border); border-radius: 22px;
-            font-size: 16px; outline: none; resize: none;
+            font-size: 16px; outline: none; resize: none; background: #f9f9f9;
         }
         .send-btn { 
             width: 44px; height: 44px; background: var(--pku-red); color: white; 
             border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
 
-        .loading-line { position: absolute; top: 0; left: 0; height: 3px; background: var(--pku-red); width: 0; transition: width 0.3s; }
-        
-        /* 调试日志样式 */
-        .debug-info { font-family: monospace; font-size: 0.7rem; background: #000; color: #0f0; padding: 10px; border-radius: 5px; margin-top: 10px; display: none; white-space: pre-wrap;}
+        .loading-line { position: absolute; top: 0; left: 0; height: 3px; background: var(--pku-red); width: 0; transition: width 0.3s; z-index: 10; }
+        #debug-log { font-family: monospace; font-size: 0.7rem; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 8px; margin-top: 10px; display: none; white-space: pre-wrap; max-height: 200px; overflow-y: auto;}
     </style>
 </head>
 <body>
 
 <header>
     <div class="logo">🏛️ 燕园伴读</div>
-    <button class="config-btn" onclick="toggleConfig(true)">设置/书籍</button>
+    <button class="config-btn" onclick="toggleConfig(true)">系统设置</button>
 </header>
 
+<!-- 配置面板 -->
 <div class="config-panel" id="config-panel">
     <div class="close-config" onclick="toggleConfig(false)">✕</div>
-    <h2 style="color:var(--pku-red)">系统配置</h2>
+    <h2 style="color:var(--pku-red); margin-bottom: 10px;">研讨设置</h2>
     
-    <div class="section-title">1. API 密钥 (必填)</div>
-    <input type="password" id="api-key" class="input-box" placeholder="输入 Gemini API Key" onchange="saveConfig()">
-    <button class="btn-action" style="background:#2ecc71" onclick="testConnection()">⚡ 测试连接 (点击排查问题)</button>
-    <div id="debug-log" class="debug-info"></div>
+    <div class="section-title">1. Google API 密钥</div>
+    <input type="password" id="api-key" class="input-box" placeholder="输入 API Key" onchange="saveConf()">
 
-    <div class="section-title">2. 阅读书籍 (TXT)</div>
-    <input type="file" id="file-upload" accept=".txt" style="display:none" onchange="handleFile(event)">
-    <button class="btn-action" style="background:#34495e" onclick="document.getElementById('file-upload').click()">📂 选择书籍文件</button>
-    <div id="book-info" style="font-size:0.8rem; color:#666; text-align:center">当前无书籍</div>
+    <div class="section-title">2. 中转代理地址 (解决国内连接问题)</div>
+    <input type="text" id="proxy-url" class="input-box" placeholder="默认: https://generativelanguage.googleapis.com" onchange="saveConf()">
+    <p style="font-size: 0.7rem; color: #e67e22; margin-bottom: 10px;">提示：若无法翻墙，请尝试寻找 Gemini 中转接口地址并填入此处。</p>
+    
+    <button class="btn-action" style="background:#27ae60" onclick="testApi()">⚡ 测试 API 连通性</button>
+    <div id="debug-log"></div>
 
-    <div class="section-title">3. 模型选择</div>
-    <select id="model-select" class="input-box">
-        <option value="gemini-1.5-flash">Gemini 1.5 Flash (极速推荐)</option>
-        <option value="gemini-1.5-pro">Gemini 1.5 Pro (逻辑更强)</option>
+    <div class="section-title">3. 上传专业书籍 (TXT)</div>
+    <input type="file" id="file-up" accept=".txt" style="display:none" onchange="onFile(event)">
+    <button class="btn-action" style="background:#34495e" onclick="document.getElementById('file-up').click()">📂 加载书籍文本</button>
+    <div id="book-name" style="font-size:0.8rem; color:#666; text-align:center">尚未加载任何书籍</div>
+
+    <div class="section-title">4. 教授模型</div>
+    <select id="model-id" class="input-box">
+        <option value="gemini-1.5-flash">Gemini 1.5 Flash (推荐：响应极快)</option>
+        <option value="gemini-1.5-pro">Gemini 1.5 Pro (深度分析)</option>
     </select>
-    
-    <p style="margin-top:30px; font-size:0.75rem; color:#999; line-height:1.5">
-        排查指南：<br>
-        1. 确保手机处于“科学上网”全局模式。<br>
-        2. 点击上方“测试连接”，若返回 200 则正常。<br>
-        3. 若报错 403，请检查 Key 是否填写正确。
-    </p>
 </div>
 
 <div class="chat-container">
     <div class="loading-line" id="loader"></div>
     <div class="chat-history" id="chat-history">
         <div class="message msg-ai">
-            <div class="bubble">欢迎，备考路上的战友。请先点击右上角“设置”进行初始化。</div>
+            <div class="msg-meta">北大教授</div>
+            <div class="bubble">欢迎同学。备考北大是一场持久战，我会根据你提供的书籍资料，为你提供最严谨的学术支持。<br><br>请先在“系统设置”中完成配置。</div>
         </div>
     </div>
 
     <div class="input-panel">
-        <textarea id="user-input" class="chat-input" rows="1" placeholder="虚心请教..." oninput="autoHeight(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="send()">
+        <textarea id="user-in" class="chat-input" rows="1" placeholder="请教教授..." oninput="reSize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="doSend()">
             <svg style="width:20px;height:20px;fill:white" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" /></svg>
         </button>
     </div>
 </div>
 
 <script>
-    let bookContent = "";
-    let context = [];
+    let bookTxt = "";
+    let msgs = [];
 
-    // 解决移动端浏览器高度抖动
-    function setVH() {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
+    function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
     window.addEventListener('resize', setVH);
     setVH();
 
     window.onload = () => {
-        const k = localStorage.getItem('pku_key');
-        if(k) document.getElementById('api-key').value = k;
+        document.getElementById('api-key').value = localStorage.getItem('pku_k') || '';
+        document.getElementById('proxy-url').value = localStorage.getItem('pku_p') || 'https://generativelanguage.googleapis.com';
     };
 
-    function toggleConfig(show) {
-        document.getElementById('config-panel').classList.toggle('active', show);
+    function toggleConfig(s) { document.getElementById('config-panel').classList.toggle('active', s); }
+
+    function saveConf() {
+        localStorage.setItem('pku_k', document.getElementById('api-key').value.trim());
+        localStorage.setItem('pku_p', document.getElementById('proxy-url').value.trim());
     }
 
-    function saveConfig() {
-        localStorage.setItem('pku_key', document.getElementById('api-key').value.trim());
-    }
-
-    function autoHeight(el) {
+    function reSize(el) {
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
     }
 
-    function handleFile(e) {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            bookContent = ev.target.result;
-            document.getElementById('book-info').innerText = `✅ 已加载: ${file.name} (${Math.round(bookContent.length/10000)}万字)`;
-            addMsg('ai', `教授已通读《${file.name}》，可以开始提问了。`);
+    function onFile(e) {
+        const f = e.target.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+            bookTxt = ev.target.result;
+            document.getElementById('book-name').innerHTML = `✅ 已加载书籍：<br><b>${f.name}</b>`;
+            addMsg('ai', `书籍《${f.name}》加载成功。我已经准备好回答关于本书的问题了。`);
             toggleConfig(false);
         };
-        reader.readAsText(file);
+        r.readAsText(f);
     }
 
     function addMsg(role, text) {
         const h = document.getElementById('chat-history');
         const d = document.createElement('div');
+        const id = 'm' + Date.now();
         d.className = `message msg-${role}`;
-        d.innerHTML = `<div class="msg-meta">${role==='user'?'学生':'教授'}</div><div class="bubble">${text}</div>`;
+        d.id = id;
+        d.onclick = () => {
+            document.querySelectorAll('.message').forEach(m => m.classList.remove('active'));
+            d.classList.add('active');
+        };
+        d.innerHTML = `
+            <div class="msg-meta">${role==='user'?'学生':'北大教授'}</div>
+            <div class="bubble">${text}</div>
+            <div class="msg-menu">
+                <span class="menu-item" onclick="copyM('${id}')">复制</span>
+                ${role==='user'?'<span class="menu-item" onclick="editM(\''+id+'\')">重说</span>':''}
+                <span class="menu-item" onclick="delM('${id}')">删除</span>
+            </div>
+        `;
         h.appendChild(d);
         h.scrollTop = h.scrollHeight;
+        return id;
     }
 
-    // --- 核心调试功能 ---
-    async function testConnection() {
-        const key = document.getElementById('api-key').value.trim();
+    function delM(id) { document.getElementById(id).remove(); }
+    function copyM(id) {
+        const t = document.querySelector(`#${id} .bubble`).innerText;
+        navigator.clipboard.writeText(t).then(() => alert("已复制"));
+    }
+    function editM(id) {
+        const t = document.querySelector(`#${id} .bubble`).innerText;
+        document.getElementById('user-in').value = t;
+        delM(id);
+        document.getElementById('user-in').focus();
+        reSize(document.getElementById('user-in'));
+    }
+
+    async function testApi() {
+        const k = document.getElementById('api-key').value.trim();
+        const p = document.getElementById('proxy-url').value.trim() || 'https://generativelanguage.googleapis.com';
         const log = document.getElementById('debug-log');
         log.style.display = 'block';
-        log.innerText = "正在发起测试请求...\n目标: googleapis.com";
+        log.style.color = '#0f0';
+        log.innerText = `正在测试...\n接口地址: ${p}\n正在尝试握手...`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            const r = await fetch(`${p.replace(/\/$/, '')}/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
             });
-            const data = await res.json();
-            if(res.ok) {
-                log.innerText += `\n✅ 连接成功！状态码: ${res.status}\n响应: ${data.candidates[0].content.parts[0].text}`;
+            const d = await r.json();
+            if(r.ok) {
+                log.innerText += `\n✅ 连接成功！教授大脑已就绪。`;
             } else {
                 log.style.color = "#ff4757";
-                log.innerText += `\n❌ 失败！状态码: ${res.status}\n原因: ${data.error.message}`;
+                log.innerText += `\n❌ 失败！错误码: ${r.status}\n消息: ${d.error?.message || '未知错误'}`;
             }
         } catch (e) {
             log.style.color = "#ff4757";
-            log.innerText += `\n🚨 网络异常！无法访问服务器。\n排查提示：请确认是否已经“翻墙”并开启了全局代理。`;
+            log.innerText += `\n🚨 网络彻底阻塞！\n原因: ${e.message}\n建议: 请开启全局科学上网，或在上方更换可用的“中转代理地址”。`;
         }
     }
 
-    async function send() {
-        const input = document.getElementById('user-input');
-        const text = input.value.trim();
+    async function doSend() {
+        const inEl = document.getElementById('user-in');
+        const text = inEl.value.trim();
         const key = document.getElementById('api-key').value.trim();
-        const model = document.getElementById('model-select').value;
+        const proxy = document.getElementById('proxy-url').value.trim() || 'https://generativelanguage.googleapis.com';
+        const model = document.getElementById('model-id').value;
 
-        if(!text || !key) return alert("请检查内容和 Key");
-        if(!bookContent) return alert("请先上传书籍文本");
+        if(!text || !key) return alert("请先完成配置");
+        if(!bookTxt) return alert("请先上传书籍文本");
 
         addMsg('user', text);
-        input.value = "";
-        input.style.height = '44px';
+        inEl.value = "";
+        reSize(inEl);
 
-        const loader = document.getElementById('loader');
-        loader.style.width = "40%";
+        const ld = document.getElementById('loader');
+        ld.style.width = "30%";
 
-        const sys = `你是一位北大中文系教授。严格根据此书回答：\n${bookContent.substring(0, 500000)}`;
-        context.push({ role: "user", parts: [{ text: text }] });
+        const prompt = `你是一位北大中文系教授，正在辅导学生考研。请严格根据以下书籍内容精准作答。若内容不在书中，请告知学生。
+        书籍文本：\n${bookTxt.substring(0, 600000)}`;
+
+        msgs.push({ role: "user", parts: [{ text: text }] });
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+            const r = await fetch(`${proxy.replace(/\/$/, '')}/v1beta/models/${model}:generateContent?key=${key}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    systemInstruction: { parts: [{ text: sys }] },
-                    contents: context
+                    systemInstruction: { parts: [{ text: prompt }] },
+                    contents: msgs
                 })
             });
-            
-            loader.style.width = "80%";
-            const data = await res.json();
-            if(data.error) throw new Error(data.error.message);
+            ld.style.width = "70%";
+            const d = await r.json();
+            if(d.error) throw new Error(d.error.message);
 
-            const aiText = data.candidates[0].content.parts[0].text;
-            addMsg('ai', aiText);
-            context.push({ role: "model", parts: [{ text: aiText }] });
+            const aiRes = d.candidates[0].content.parts[0].text;
+            addMsg('ai', aiRes);
+            msgs.push({ role: "model", parts: [{ text: aiRes }] });
         } catch (e) {
-            addMsg('ai', `【连接中断】${e.message}\n请检查网络环境或点击“设置”进行连接测试。`);
+            addMsg('ai', `【教授失联】${e.message}\n请检查“中转代理地址”或确认网络是否通畅。`);
         } finally {
-            loader.style.width = "0";
+            ld.style.width = "0";
         }
     }
 </script>
