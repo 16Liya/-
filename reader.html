@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>燕园伴读 - 考研直连版</title>
+    <title>燕园伴读 - 经典对话</title>
     <style>
         :root {
             --pku-red: #8b0012;
-            --bg-color: #f7f3ed;
-            --chat-bg: #ffffff;
-            --text-main: #2c3e50;
-            --border: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --user-bubble: #95ec69; /* 经典的绿色气泡 */
+            --ai-bubble: #ffffff;
+            --text-main: #191919;
+            --border-color: #e7e7e7;
             --vh: 1vh;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Noto Serif SC", "Songti SC", serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         
         body { 
             background-color: var(--bg-color); 
@@ -22,203 +23,256 @@
             display: flex; flex-direction: column; overflow: hidden; 
         }
 
+        /* 顶部导航 */
         header {
-            background-color: var(--pku-red); color: white; 
+            background-color: #ededed; color: var(--text-main); 
             padding: env(safe-area-inset-top) 15px 10px;
             display: flex; justify-content: space-between; align-items: center;
-            z-index: 100; flex-shrink: 0;
+            border-bottom: 1px solid var(--border-color); z-index: 100;
         }
-        .config-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; }
+        .header-title { font-size: 1rem; font-weight: 500; }
+        .config-icon { font-size: 1.2rem; cursor: pointer; padding: 5px; }
 
-        /* 全屏设置面板 */
-        .config-panel {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 1000; transform: translateY(-100%);
-            transition: transform 0.3s ease;
-            padding: 40px 20px; overflow-y: auto;
+        /* 配置抽屉 */
+        .drawer {
+            position: fixed; top: 0; right: 0; width: 85%; height: 100%;
+            background: #fff; z-index: 1001; transform: translateX(100%);
+            transition: transform 0.3s ease; padding: 25px 20px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
         }
-        .config-panel.active { transform: translateY(0); }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; padding: 10px; }
+        .drawer.active { transform: translateX(0); }
+        .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
+        .drawer-overlay.active { display: block; }
 
-        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--pku-red); margin: 20px 0 10px; border-left: 3px solid var(--pku-red); padding-left: 8px; }
-        .input-box { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #fafafa; }
-        .btn-action { width: 100%; padding: 14px; background: var(--pku-red); color: white; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 15px; }
+        .drawer h3 { margin-bottom: 15px; font-size: 1.1rem; color: var(--pku-red); border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .label { font-size: 0.85rem; color: #666; margin-bottom: 5px; display: block; }
+        .input-item { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .btn-save { width: 100%; padding: 12px; background: var(--pku-red); color: white; border: none; border-radius: 6px; font-weight: bold; }
 
-        /* 聊天区 */
-        .chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--chat-bg); position: relative; }
-        .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 80px; }
+        /* 聊天区域 */
+        .chat-main { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
 
-        .message { display: flex; flex-direction: column; max-width: 90%; }
-        .msg-user { align-self: flex-end; }
-        .msg-ai { align-self: flex-start; }
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 1rem; line-height: 1.6; word-break: break-all; }
-        .msg-user .bubble { background: var(--pku-red); color: white; border-bottom-right-radius: 2px; }
-        .msg-ai .bubble { background: var(--bg-color); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
-        .msg-meta { font-size: 0.7rem; color: #999; margin-bottom: 4px; }
+        .msg-row { display: flex; width: 100%; position: relative; }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.ai { justify-content: flex-start; }
 
-        /* 输入面板 */
-        .input-panel {
-            background: white; border-top: 1px solid var(--border);
-            padding: 10px 15px calc(15px + env(safe-area-inset-bottom));
-            display: flex; gap: 10px; align-items: flex-end;
+        .avatar { width: 40px; height: 40px; border-radius: 4px; background-size: cover; flex-shrink: 0; }
+        .ai .avatar { background-color: var(--pku-red); margin-right: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; }
+        .user .avatar { background-color: #ddd; margin-left: 10px; }
+
+        .bubble-wrap { max-width: 70%; position: relative; }
+        .bubble { 
+            padding: 10px 12px; border-radius: 6px; font-size: 1rem; line-height: 1.5; 
+            position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .chat-input { flex: 1; min-height: 44px; max-height: 120px; padding: 10px 15px; border: 1px solid var(--border); border-radius: 22px; font-size: 16px; outline: none; resize: none; background: #f9f9f9; }
-        .send-btn { width: 44px; height: 44px; background: var(--pku-red); color: white; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ai .bubble { background: var(--ai-bubble); color: #000; border: 1px solid #e0e0e0; }
+        .user .bubble { background: var(--user-bubble); color: #000; }
 
-        #debug-log { font-family: monospace; font-size: 0.7rem; background: #1a1a1a; color: #0f0; padding: 12px; border-radius: 8px; margin-top: 10px; display: none; white-space: pre-wrap; word-break: break-all; }
-        .loading-line { position: absolute; top: 0; left: 0; height: 3px; background: var(--pku-red); width: 0; transition: width 0.3s; }
+        /* 气泡小箭头 */
+        .bubble::after { content: ""; position: absolute; top: 12px; width: 0; height: 0; border: 6px solid transparent; }
+        .ai .bubble::after { left: -12px; border-right-color: var(--ai-bubble); }
+        .user .bubble::after { right: -12px; border-left-color: var(--user-bubble); }
+
+        /* 交互菜单 */
+        .msg-actions { 
+            position: absolute; bottom: -25px; display: none; gap: 10px; font-size: 0.75rem; color: #888; 
+            background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 10px; border: 1px solid #eee;
+        }
+        .msg-row:active .msg-actions, .msg-row.show-menu .msg-actions { display: flex; }
+        .action-item { cursor: pointer; }
+        .action-item:hover { color: var(--pku-red); }
+
+        /* 输入栏 */
+        .footer { 
+            background: #f7f7f7; border-top: 1px solid var(--border-color);
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+            display: flex; align-items: flex-end; gap: 8px;
+        }
+        .input-area { 
+            flex: 1; background: white; border: 1px solid #ddd; border-radius: 6px;
+            padding: 8px 12px; min-height: 38px; max-height: 120px; 
+            font-size: 16px; outline: none; resize: none; line-height: 1.4;
+        }
+        .btn-send { 
+            width: 60px; height: 38px; background: #07c160; color: white; 
+            border: none; border-radius: 4px; font-weight: 500; font-size: 0.9rem;
+        }
+        .btn-send:disabled { opacity: 0.5; }
+
+        .loading-dots { font-size: 0.8rem; color: #999; margin-left: 50px; display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">🏛️ 燕园伴读</div>
-    <button class="config-btn" onclick="toggleConfig(true)">设置/排错</button>
+    <div style="width: 30px;"></div> <!-- 占位平衡 -->
+    <div class="header-title">燕园伴读 (北大教授)</div>
+    <div class="config-icon" onclick="toggleDrawer(true)">⚙️</div>
 </header>
 
-<div class="config-panel" id="config-panel">
-    <div class="close-btn" onclick="toggleConfig(false)">✕</div>
-    <h2 style="color:var(--pku-red)">系统配置</h2>
+<div class="drawer-overlay" id="overlay" onclick="toggleDrawer(false)"></div>
+<div class="drawer" id="drawer">
+    <h3>系统设置</h3>
+    <label class="label">API Key</label>
+    <input type="password" id="api-key" class="input-item" placeholder="中转 API Key">
     
-    <div class="section-title">1. API 钥匙 (必填)</div>
-    <input type="password" id="api-key" class="input-box" placeholder="在此粘贴你的 API Key">
-
-    <div class="section-title">2. API 中转地址 (关键：解决连不上)</div>
-    <input type="text" id="proxy-url" class="input-box" placeholder="默认已填入可用地址">
-    <p style="font-size: 0.7rem; color: #e67e22;">如果你没翻墙，请使用默认的中转地址。</p>
+    <label class="label">接口地址 (中转站提供)</label>
+    <input type="text" id="proxy-url" class="input-item" placeholder="例如: https://api.xxx.com">
     
-    <button class="btn-action" style="background:#27ae60" onclick="testConnection()">⚡ 测试连接 (看到 Success 才能用)</button>
-    <div id="debug-log"></div>
-
-    <div class="section-title">3. 书籍上传 (TXT)</div>
-    <input type="file" id="file-up" accept=".txt" style="display:none" onchange="onFile(event)">
-    <button class="btn-action" style="background:#34495e" onclick="document.getElementById('file-up').click()">📂 加载专业课书籍</button>
-    <div id="book-status" style="font-size:0.8rem; color:#666; text-align:center">当前无书籍</div>
+    <label class="label">上传书籍 (TXT)</label>
+    <input type="file" id="file-input" accept=".txt" style="display:none" onchange="handleFile(event)">
+    <button class="input-item" style="background:#f0f0f0; border:1px dashed #ccc;" onclick="document.getElementById('file-input').click()">点击选择书籍</button>
+    <div id="book-info" style="font-size:12px; color:#999; text-align:center;">尚未加载资料</div>
+    
+    <button class="btn-save" style="margin-top:20px" onclick="saveSettings()">保存配置并关闭</button>
 </div>
 
-<div class="chat-container">
-    <div class="loading-line" id="loader"></div>
-    <div class="chat-history" id="chat-history">
-        <div class="message msg-ai">
-            <div class="bubble">同学你好。如果 API 连不上，请点右上角设置，看看“测试连接”的反馈。</div>
+<main class="chat-main" id="chat-content">
+    <div class="msg-row ai">
+        <div class="avatar">PKU</div>
+        <div class="bubble-wrap">
+            <div class="bubble">同学你好。我是负责辅导你专业课的教授。请加载书籍资料并配置好 API，我们可以开始研讨。</div>
         </div>
     </div>
+</main>
 
-    <div class="input-panel">
-        <textarea id="user-in" class="chat-input" rows="1" placeholder="请教教授..." oninput="autoHeight(this)"></textarea>
-        <button class="send-btn" onclick="doSend()">
-            <svg style="width:20px;height:20px;fill:white" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" /></svg>
-        </button>
-    </div>
+<div class="loading-dots" id="loading-hint">教授正在组织语言...</div>
+
+<div class="footer">
+    <textarea class="input-area" id="user-input" rows="1" placeholder="虚心求教..." oninput="reSize(this)"></textarea>
+    <button class="btn-send" id="send-btn" onclick="handleSend()">发送</button>
 </div>
 
 <script>
-    let bookContent = "";
-    let chatMsgs = [];
+    let bookData = "";
+    let messageLog = [];
 
-    // 默认中转地址 (公益中转)
-    const DEFAULT_PROXY = "https://api.geminiproxy.com"; // 如果这个挂了，我会再换一个
-
-    window.onload = () => {
-        setVH();
-        document.getElementById('api-key').value = localStorage.getItem('pku_k') || '';
-        document.getElementById('proxy-url').value = localStorage.getItem('pku_p') || DEFAULT_PROXY;
-    };
-
+    // 初始化动态高度
     function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
     window.addEventListener('resize', setVH);
+    setVH();
 
-    function toggleConfig(show) { document.getElementById('config-panel').classList.toggle('active', show); }
-    
-    function autoHeight(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+    window.onload = () => {
+        document.getElementById('api-key').value = localStorage.getItem('chat_key') || '';
+        document.getElementById('proxy-url').value = localStorage.getItem('chat_proxy') || 'https://generativelanguage.googleapis.com';
+    };
 
-    function onFile(e) {
+    function toggleDrawer(show) {
+        document.getElementById('drawer').classList.toggle('active', show);
+        document.getElementById('overlay').classList.toggle('active', show);
+    }
+
+    function saveSettings() {
+        localStorage.setItem('chat_key', document.getElementById('api-key').value.trim());
+        localStorage.setItem('chat_proxy', document.getElementById('proxy-url').value.trim());
+        toggleDrawer(false);
+    }
+
+    function reSize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    function handleFile(e) {
         const file = e.target.files[0];
         if(!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            bookContent = ev.target.result;
-            document.getElementById('book-status').innerHTML = `✅ 已加载: ${file.name}`;
-            addMsg('ai', `书籍加载成功。现在可以开始学术讨论了。`);
-            toggleConfig(false);
+            bookData = ev.target.result;
+            document.getElementById('book-info').innerText = `✅ 已加载: ${file.name}`;
+            renderMsg('ai', `书籍《${file.name}》已载入。我已准备好为你答疑解惑。`);
+            toggleDrawer(false);
         };
         reader.readAsText(file);
     }
 
-    function addMsg(role, text) {
-        const h = document.getElementById('chat-history');
-        const d = document.createElement('div');
-        d.className = `message msg-${role}`;
-        d.innerHTML = `<div class="msg-meta">${role==='user'?'学生':'教授'}</div><div class="bubble">${text}</div>`;
-        h.appendChild(d);
-        h.scrollTop = h.scrollHeight;
+    function renderMsg(role, text) {
+        const container = document.getElementById('chat-content');
+        const row = document.createElement('div');
+        const id = 'msg_' + Date.now();
+        row.className = `msg-row ${role}`;
+        row.id = id;
+        
+        // 点击显示菜单
+        row.onclick = () => {
+            document.querySelectorAll('.msg-row').forEach(r => r.classList.remove('show-menu'));
+            row.classList.toggle('show-menu');
+        };
+
+        row.innerHTML = `
+            ${role==='ai' ? '<div class="avatar">PKU</div>' : ''}
+            <div class="bubble-wrap">
+                <div class="bubble">${text}</div>
+                <div class="msg-actions">
+                    <span class="action-item" onclick="copyText('${id}')">复制</span>
+                    <span class="action-item" onclick="deleteText('${id}')">删除</span>
+                    ${role==='user' ? `<span class="action-item" onclick="editText('${id}')">重说</span>` : ''}
+                </div>
+            </div>
+            ${role==='user' ? '<div class="avatar"></div>' : ''}
+        `;
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+        return id;
     }
 
-    async function testConnection() {
-        const k = document.getElementById('api-key').value.trim();
-        const p = document.getElementById('proxy-url').value.trim();
-        const log = document.getElementById('debug-log');
-        log.style.display = 'block';
-        log.innerText = `正在尝试通过中转站连接...\n中转: ${p}\n等待响应...`;
-        localStorage.setItem('pku_k', k);
-        localStorage.setItem('pku_p', p);
-
-        try {
-            const url = `${p.replace(/\/$/, '')}/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`;
-            const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
-            });
-            const data = await res.json();
-            if(res.ok) {
-                log.style.color = "#0f0";
-                log.innerText += `\n\n✅ 成功！教授大脑已唤醒。\n测试回复: ${data.candidates[0].content.parts[0].text}`;
-            } else {
-                log.style.color = "#f00";
-                log.innerText += `\n\n❌ 失败: ${data.error?.message || '未知错误'}`;
-            }
-        } catch (e) {
-            log.style.color = "#f00";
-            log.innerText += `\n\n🚨 彻底连接失败！\n报错: ${e.message}\n说明: 即使通过中转也无法访问。请尝试换一个中转地址或检查 Key。`;
-        }
+    function deleteText(id) { document.getElementById(id).remove(); }
+    function copyText(id) {
+        const t = document.querySelector(`#${id} .bubble`).innerText;
+        navigator.clipboard.writeText(t).then(() => alert("已复制"));
+    }
+    function editText(id) {
+        const t = document.querySelector(`#${id} .bubble`).innerText;
+        document.getElementById('user-input').value = t;
+        deleteText(id);
+        reSize(document.getElementById('user-input'));
+        document.getElementById('user-input').focus();
     }
 
-    async function doSend() {
-        const inEl = document.getElementById('user-in');
-        const text = inEl.value.trim();
-        const k = document.getElementById('api-key').value.trim();
-        const p = document.getElementById('proxy-url').value.trim();
+    async function handleSend() {
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        const key = document.getElementById('api-key').value.trim();
+        const proxy = document.getElementById('proxy-url').value.trim() || 'https://generativelanguage.googleapis.com';
 
-        if(!text || !k) return;
-        if(!bookContent) return alert("请先加载书籍");
+        if(!text || !key) return alert("请检查输入或 API 设置");
+        if(!bookData) return alert("请先上传书籍文本");
 
-        addMsg('user', text);
-        inEl.value = "";
-        autoHeight(inEl);
+        renderMsg('user', text);
+        input.value = "";
+        reSize(input);
 
-        const ld = document.getElementById('loader');
-        ld.style.width = "40%";
+        const hint = document.getElementById('loading-hint');
+        const btn = document.getElementById('send-btn');
+        hint.style.display = 'block';
+        btn.disabled = true;
 
-        const sysPrompt = `你是一位北大中文系教授。请严格根据以下书籍回答：\n${bookContent.substring(0, 500000)}`;
-        chatMsgs.push({ role: "user", parts: [{ text: text }] });
+        const systemContent = `你是一位北大中文系教授。请严格根据以下书籍内容回答学生提问：\n${bookData.substring(0, 500000)}`;
+        messageLog.push({ role: "user", parts: [{ text: text }] });
 
         try {
-            const res = await fetch(`${p.replace(/\/$/, '')}/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
+            const baseUrl = proxy.replace(/\/$/, '');
+            const response = await fetch(`${baseUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ systemInstruction: { parts: [{ text: sysPrompt }] }, contents: chatMsgs })
+                body: JSON.stringify({
+                    systemInstruction: { parts: [{ text: systemContent }] },
+                    contents: messageLog
+                })
             });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error?.message || "请求失败");
 
-            const aiText = data.candidates[0].content.parts[0].text;
-            addMsg('ai', aiText);
-            chatMsgs.push({ role: "model", parts: [{ text: aiText }] });
-        } catch (e) {
-            addMsg('ai', `【教授失联】原因：${e.message}`);
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.error?.message || "请求失败");
+
+            const aiText = result.candidates[0].content.parts[0].text;
+            renderMsg('ai', aiText);
+            messageLog.push({ role: "model", parts: [{ text: aiText }] });
+
+        } catch (err) {
+            renderMsg('ai', `【教授断线】${err.message}\n请检查 API Key 是否有效，或中转地址是否填写正确。`);
         } finally {
-            ld.style.width = "0";
+            hint.style.display = 'none';
+            btn.disabled = false;
         }
     }
 </script>
